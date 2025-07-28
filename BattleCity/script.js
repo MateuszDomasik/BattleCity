@@ -101,7 +101,7 @@ const BULLET_SIZE = 10;
 let playerHealth = 10;
 let playerMaxHealth = 10;
 let playerBullets = 10;
-let playerWood = 0;
+let playerWood = 5;
 
 function updateUI() {
     const ui = document.getElementById('ui');
@@ -1003,12 +1003,15 @@ function drawShopBlocks() {
 
 // Shop popup logic
 let shopOpen = false;
-function openShop() {
-    if (shopOpen) return;
+let shopCloseCooldown = false;
+let lastShopBlockTouched = null;
+function openShop(block) {
+    if (shopOpen || shopCloseCooldown || lastShopBlockTouched === block) return;
     shopOpen = true;
+    lastShopBlockTouched = block;
     // Remove any existing popup
     const existing = document.getElementById('shop-popup');
-    if (existing) existing.remove();
+    if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
     const popup = document.createElement('div');
     popup.id = 'shop-popup';
     popup.style.position = 'fixed';
@@ -1033,8 +1036,10 @@ function openShop() {
     document.getElementById('close-shop-btn').onclick = function(e) {
         e.stopPropagation();
         shopOpen = false;
+        shopCloseCooldown = true;
         const pop = document.getElementById('shop-popup');
         if (pop && pop.parentNode) pop.parentNode.removeChild(pop);
+        setTimeout(() => { shopCloseCooldown = false; }, 500);
     };
     document.getElementById('buy-block-btn').onclick = function(e) {
         e.stopPropagation();
@@ -1057,6 +1062,7 @@ function openShop() {
 
 // Check for player-shopBlock collision in updatePlayer
 function checkPlayerShopBlockCollision() {
+    let onShop = false;
     for (const block of shopBlocks) {
         if (
             player.x < block.x + block.size &&
@@ -1064,9 +1070,13 @@ function checkPlayerShopBlockCollision() {
             player.y < block.y + block.size &&
             player.y + player.size > block.y
         ) {
-            openShop();
+            onShop = true;
+            openShop(block);
             break;
         }
+    }
+    if (!onShop) {
+        lastShopBlockTouched = null;
     }
 }
 
