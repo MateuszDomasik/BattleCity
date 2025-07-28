@@ -234,18 +234,40 @@ function tryMove(dir) {
     }
 }
 
+const ARROW_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+const PRESS_THRESHOLD = 300; // ms
+let arrowKeyTimers = {};
+
+// On keydown, start timer if not already started
+// On keyup, if held less than threshold, only rotate; if held longer, rotate and move
+
+let movingDirection = null;
+let moveHoldTimer = null;
+
+function startMoveHold(dirKey) {
+    if (moveHoldTimer) clearTimeout(moveHoldTimer);
+    moveHoldTimer = setTimeout(() => {
+        movingDirection = dirKey;
+        if (!moveTarget) {
+            if (dirKey === 'ArrowUp') tryMove('up');
+            else if (dirKey === 'ArrowDown') tryMove('down');
+            else if (dirKey === 'ArrowLeft') tryMove('left');
+            else if (dirKey === 'ArrowRight') tryMove('right');
+        }
+    }, PRESS_THRESHOLD);
+}
+
 document.addEventListener('keydown', (e) => {
     if (directionAngles.hasOwnProperty(e.key)) {
-        // Only rotate if not already facing that direction
         const desiredAngle = directionAngles[e.key];
+        // Rotate immediately
         if (getNormalizedAngle(player.angle) !== desiredAngle) {
             player.angle = desiredAngle;
-        } else if (!keysPressed[e.key]) {
-            // Try to move if not already pressed and not already moving
-            if (e.key === 'ArrowUp') tryMove('up');
-            else if (e.key === 'ArrowDown') tryMove('down');
-            else if (e.key === 'ArrowLeft') tryMove('left');
-            else if (e.key === 'ArrowRight') tryMove('right');
+        }
+        // Start timer for movement if not already started
+        if (!arrowKeyTimers[e.key]) {
+            arrowKeyTimers[e.key] = { start: Date.now(), moved: false };
+            startMoveHold(e.key);
         }
         keysPressed[e.key] = true;
     }
@@ -257,6 +279,9 @@ document.addEventListener('keydown', (e) => {
 
 document.addEventListener('keyup', (e) => {
     if (directionAngles.hasOwnProperty(e.key)) {
+        if (moveHoldTimer) clearTimeout(moveHoldTimer);
+        if (movingDirection === e.key) movingDirection = null;
+        delete arrowKeyTimers[e.key];
         keysPressed[e.key] = false;
     }
     if (e.code === 'Space') {
@@ -265,6 +290,12 @@ document.addEventListener('keyup', (e) => {
 });
 
 function updatePlayer() {
+    if (!moveTarget && movingDirection) {
+        if (movingDirection === 'ArrowUp') tryMove('up');
+        else if (movingDirection === 'ArrowDown') tryMove('down');
+        else if (movingDirection === 'ArrowLeft') tryMove('left');
+        else if (movingDirection === 'ArrowRight') tryMove('right');
+    }
     if (!moveTarget) return;
     const now = performance.now();
     const elapsed = now - moveStart;
