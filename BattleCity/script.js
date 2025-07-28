@@ -843,6 +843,7 @@ function checkPlayerWaterBlockCollision() {
                 playerHealth--;
                 updateUI();
                 lastWaterDamageTime = now;
+                startTankFlicker();
             }
             // Teleport tank back to previous position
             let safe = true;
@@ -884,4 +885,56 @@ updatePlayer = function() {
     checkPlayerBulletBlockCollision();
     checkPlayerWoodBlockCollision();
     checkPlayerWaterBlockCollision();
+} 
+
+let tankFlicker = false;
+let tankFlickerEnd = 0;
+let tankFlickerToggle = false;
+
+function startTankFlicker() {
+    tankFlicker = true;
+    tankFlickerEnd = Date.now() + 1000;
+    tankFlickerToggle = false;
+}
+
+// Update drawPlayer to flicker tank if tankFlicker is true
+const originalDrawPlayerFlicker = drawPlayer;
+drawPlayer = function() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBlocks();
+    drawBulletBlocks();
+    drawPurpleBlocks();
+    drawTreeBlocks();
+    drawWoodBlocks();
+    drawWaterBlocks();
+    drawBullets();
+    let showTank = true;
+    if (tankFlicker) {
+        if (Date.now() < tankFlickerEnd) {
+            // Toggle every 100ms
+            if (Math.floor(Date.now() / 100) % 2 === 0) {
+                showTank = false;
+            }
+        } else {
+            tankFlicker = false;
+        }
+    }
+    if (showTank) {
+        if (tankImgLoaded) {
+            ctx.save();
+            ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
+            ctx.rotate(player.angle);
+            ctx.drawImage(
+                tankImg,
+                -player.size / 2,
+                -player.size / 2,
+                player.size,
+                player.size
+            );
+            ctx.restore();
+        } else {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+        }
+    }
 } 
