@@ -907,11 +907,11 @@ drawPlayer = function() {
     drawTreeBlocks();
     drawWoodBlocks();
     drawWaterBlocks();
+    drawShopBlocks();
     drawBullets();
     let showTank = true;
     if (tankFlicker) {
         if (Date.now() < tankFlickerEnd) {
-            // Toggle every 100ms
             if (Math.floor(Date.now() / 100) % 2 === 0) {
                 showTank = false;
             }
@@ -937,4 +937,177 @@ drawPlayer = function() {
             ctx.fillRect(player.x, player.y, player.size, player.size);
         }
     }
+} 
+
+const BACKPACK_SIZE = 5;
+let backpack = new Array(BACKPACK_SIZE).fill(null);
+
+function renderBackpack() {
+    const backpackDiv = document.getElementById('backpack');
+    backpackDiv.innerHTML = '';
+    for (let i = 0; i < BACKPACK_SIZE; i++) {
+        const slot = document.createElement('div');
+        slot.style.width = '48px';
+        slot.style.height = '48px';
+        slot.style.border = '2px solid #aaa';
+        slot.style.background = '#222';
+        slot.style.borderRadius = '8px';
+        slot.style.display = 'flex';
+        slot.style.justifyContent = 'center';
+        slot.style.alignItems = 'center';
+        slot.style.fontSize = '24px';
+        slot.style.color = '#888';
+        slot.innerText = '';
+        backpackDiv.appendChild(slot);
+    }
+}
+
+// Call at start
+renderBackpack(); 
+
+const shopBlockCount = 2;
+const shopBlocks = [];
+function getRandomShopBlockPosition() {
+    return {
+        x: Math.floor(Math.random() * GRID_COLS) * CELL_SIZE,
+        y: Math.floor(Math.random() * GRID_ROWS) * CELL_SIZE
+    };
+}
+for (let i = 0; i < shopBlockCount; i++) {
+    let pos, overlap;
+    do {
+        pos = getRandomShopBlockPosition();
+        overlap = (pos.x === player.x && pos.y === player.y)
+            || blocks.some(b => b.x === pos.x && b.y === pos.y)
+            || bulletBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || purpleBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || treeBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || woodBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || waterBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || shopBlocks.some(b => b.x === pos.x && b.y === pos.y);
+    } while (overlap);
+    shopBlocks.push({ x: pos.x, y: pos.y, size: CELL_SIZE, color: 'red' });
+}
+
+function drawShopBlocks() {
+    for (const block of shopBlocks) {
+        ctx.fillStyle = block.color;
+        ctx.fillRect(block.x, block.y, block.size, block.size);
+        ctx.fillStyle = 'white';
+        ctx.font = `${Math.floor(block.size / 2.5)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('S', block.x + block.size / 2, block.y + block.size / 2);
+    }
+}
+
+// Shop popup logic
+let shopOpen = false;
+function openShop() {
+    if (shopOpen) return;
+    shopOpen = true;
+    // Remove any existing popup
+    const existing = document.getElementById('shop-popup');
+    if (existing) existing.remove();
+    const popup = document.createElement('div');
+    popup.id = 'shop-popup';
+    popup.style.position = 'fixed';
+    popup.style.left = '50%';
+    popup.style.top = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
+    popup.style.background = '#222';
+    popup.style.border = '3px solid #a00';
+    popup.style.borderRadius = '12px';
+    popup.style.padding = '32px 40px';
+    popup.style.zIndex = '1000';
+    popup.style.color = 'white';
+    popup.style.fontFamily = 'Arial';
+    popup.innerHTML = `<h2 style='margin-top:0;color:#f55;'>Shop</h2>
+        <div style='display:flex;align-items:center;gap:16px;margin-bottom:16px;'>
+            <div style='width:48px;height:48px;background:sandybrown;border:2px solid #b97a56;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;'>B</div>
+            <div>Light Brown Block<br><span style='color:#ccc;font-size:16px;'>Cost: 2 wood</span></div>
+            <button id='buy-block-btn' style='margin-left:16px;padding:8px 16px;font-size:16px;border-radius:6px;border:none;background:#b97a56;color:white;cursor:pointer;'>Buy</button>
+        </div>
+        <button id='close-shop-btn' style='margin-top:8px;padding:6px 18px;font-size:16px;border-radius:6px;border:none;background:#444;color:white;cursor:pointer;'>Close</button>`;
+    document.body.appendChild(popup);
+    document.getElementById('close-shop-btn').onclick = function(e) {
+        e.stopPropagation();
+        shopOpen = false;
+        const pop = document.getElementById('shop-popup');
+        if (pop && pop.parentNode) pop.parentNode.removeChild(pop);
+    };
+    document.getElementById('buy-block-btn').onclick = function(e) {
+        e.stopPropagation();
+        if (playerWood >= 2) {
+            const idx = backpack.findIndex(x => x === null);
+            if (idx !== -1) {
+                playerWood -= 2;
+                backpack[idx] = 'block';
+                updateUI();
+                renderBackpack();
+                alert('You bought a light brown block!');
+            } else {
+                alert('Backpack is full!');
+            }
+        } else {
+            alert('Not enough wood!');
+        }
+    };
+}
+
+// Check for player-shopBlock collision in updatePlayer
+function checkPlayerShopBlockCollision() {
+    for (const block of shopBlocks) {
+        if (
+            player.x < block.x + block.size &&
+            player.x + player.size > block.x &&
+            player.y < block.y + block.size &&
+            player.y + player.size > block.y
+        ) {
+            openShop();
+            break;
+        }
+    }
+}
+
+// Update renderBackpack to show block if present
+const originalRenderBackpack = renderBackpack;
+renderBackpack = function() {
+    const backpackDiv = document.getElementById('backpack');
+    backpackDiv.innerHTML = '';
+    for (let i = 0; i < BACKPACK_SIZE; i++) {
+        const slot = document.createElement('div');
+        slot.style.width = '48px';
+        slot.style.height = '48px';
+        slot.style.border = '2px solid #aaa';
+        slot.style.background = '#222';
+        slot.style.borderRadius = '8px';
+        slot.style.display = 'flex';
+        slot.style.justifyContent = 'center';
+        slot.style.alignItems = 'center';
+        slot.style.fontSize = '24px';
+        slot.style.color = '#888';
+        if (backpack[i] === 'block') {
+            slot.style.background = 'sandybrown';
+            slot.style.border = '2px solid #b97a56';
+            slot.style.color = 'white';
+            slot.innerText = 'B';
+        } else {
+            slot.innerText = '';
+        }
+        backpackDiv.appendChild(slot);
+    }
+}
+
+// In drawPlayer, after drawWaterBlocks:
+drawShopBlocks();
+
+// Call checkPlayerShopBlockCollision in updatePlayer
+const originalUpdatePlayerShop = updatePlayer;
+updatePlayer = function() {
+    if (typeof originalUpdatePlayerShop === 'function') originalUpdatePlayerShop();
+    checkPlayerBulletBlockCollision();
+    checkPlayerWoodBlockCollision();
+    checkPlayerWaterBlockCollision();
+    checkPlayerShopBlockCollision();
 } 
