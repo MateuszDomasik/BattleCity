@@ -97,7 +97,45 @@ const bullets = [];
 const BULLET_SPEED = 6;
 const BULLET_SIZE = 10;
 
+// Player stats
+let playerHealth = 10;
+let playerMaxHealth = 10;
+let playerBullets = 10;
+let playerWood = 0;
+
+function updateUI() {
+    const ui = document.getElementById('ui');
+    // Health bar
+    const barWidth = 300;
+    const barHeight = 20;
+    const healthPercent = playerHealth / playerMaxHealth;
+    let healthBar = `<div style='display:flex;align-items:center;gap:10px;'>`
+        + `<span style='color:white;font-family:Arial;font-size:18px;'>Health:</span>`
+        + `<div style='position:relative;width:${barWidth}px;height:${barHeight}px;background:#222;border:2px solid white;'>`
+        + `<div style='background:green;width:${Math.max(0, barWidth * healthPercent)}px;height:${barHeight}px;'></div>`
+        + `<span style='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:white;font-family:Arial;font-size:16px;'>${playerHealth} / ${playerMaxHealth}</span>`
+        + `</div></div>`;
+    // Bullet counter
+    let bulletCounter = `<div style='display:flex;align-items:center;gap:10px;'>`
+        + `<span style='color:white;font-family:Arial;font-size:18px;'>Bullets:</span>`
+        + `<span style='color:white;font-family:Arial;font-size:20px;'>${playerBullets}</span>`
+        + `</div>`;
+    // Wood counter
+    let woodCounter = `<div style='display:flex;align-items:center;gap:10px;'>`
+        + `<span style='color:white;font-family:Arial;font-size:18px;'>Wood:</span>`
+        + `<span style='color:saddlebrown;font-family:Arial;font-size:20px;'>${playerWood}</span>`
+        + `</div>`;
+    ui.innerHTML = healthBar + bulletCounter + woodCounter;
+}
+
+// Call updateUI at start
+updateUI();
+
+// Update shootBullet to check and decrease bullet count
 function shootBullet() {
+    if (playerBullets <= 0) return;
+    playerBullets--;
+    updateUI();
     // Adjust angle so 0 is up (canvas 0 is right)
     const angle = getNormalizedAngle(player.angle) - Math.PI / 2;
     const cx = player.x + player.size / 2;
@@ -158,17 +196,94 @@ function drawBullets() {
     }
 }
 
+// Place bulletBlocks and related functions before drawPlayer
+const bulletBlockCount = 5;
+const bulletBlocks = [];
+function getRandomBulletBlockPosition() {
+    return {
+        x: Math.floor(Math.random() * GRID_COLS) * CELL_SIZE,
+        y: Math.floor(Math.random() * GRID_ROWS) * CELL_SIZE
+    };
+}
+for (let i = 0; i < bulletBlockCount; i++) {
+    let pos, overlap;
+    do {
+        pos = getRandomBulletBlockPosition();
+        // Avoid placing on player, other blocks, or other bullet blocks
+        overlap = (pos.x === player.x && pos.y === player.y)
+            || blocks.some(b => b.x === pos.x && b.y === pos.y)
+            || bulletBlocks.some(b => b.x === pos.x && b.y === pos.y);
+    } while (overlap);
+    bulletBlocks.push({ x: pos.x, y: pos.y, size: CELL_SIZE, color: 'orange' });
+}
+
+function drawBulletBlocks() {
+    for (const block of bulletBlocks) {
+        ctx.fillStyle = block.color;
+        ctx.fillRect(block.x, block.y, block.size, block.size);
+        // Draw bullet icon or number
+        ctx.fillStyle = 'white';
+        ctx.font = `${Math.floor(block.size / 2.5)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('+5', block.x + block.size / 2, block.y + block.size / 2);
+    }
+}
+
+function checkPlayerBulletBlockCollision() {
+    for (let i = bulletBlocks.length - 1; i >= 0; i--) {
+        const block = bulletBlocks[i];
+        if (
+            player.x < block.x + block.size &&
+            player.x + player.size > block.x &&
+            player.y < block.y + block.size &&
+            player.y + player.size > block.y
+        ) {
+            bulletBlocks.splice(i, 1);
+            playerBullets += 5;
+            updateUI();
+        }
+    }
+}
+
+const purpleBlockCount = 5;
+const purpleBlocks = [];
+function getRandomPurpleBlockPosition() {
+    return {
+        x: Math.floor(Math.random() * GRID_COLS) * CELL_SIZE,
+        y: Math.floor(Math.random() * GRID_ROWS) * CELL_SIZE
+    };
+}
+for (let i = 0; i < purpleBlockCount; i++) {
+    let pos, overlap;
+    do {
+        pos = getRandomPurpleBlockPosition();
+        // Avoid placing on player, other blocks, bullet blocks, or other purple blocks
+        overlap = (pos.x === player.x && pos.y === player.y)
+            || blocks.some(b => b.x === pos.x && b.y === pos.y)
+            || bulletBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || purpleBlocks.some(b => b.x === pos.x && b.y === pos.y);
+    } while (overlap);
+    purpleBlocks.push({ x: pos.x, y: pos.y, size: CELL_SIZE, color: 'purple' });
+}
+
+function drawPurpleBlocks() {
+    for (const block of purpleBlocks) {
+        ctx.fillStyle = block.color;
+        ctx.fillRect(block.x, block.y, block.size, block.size);
+    }
+}
+
 function drawPlayer() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBlocks();
+    drawBulletBlocks();
+    drawPurpleBlocks();
     drawBullets();
     if (tankImgLoaded) {
         ctx.save();
-        // Move to the center of the tank
         ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
-        // Rotate so 0 is up
         ctx.rotate(player.angle);
-        // Draw the tank image centered
         ctx.drawImage(
             tankImg,
             -player.size / 2,
@@ -202,6 +317,8 @@ function getNormalizedAngle(angle) {
     return angle;
 }
 
+let lastWaterDamageTime = 0;
+
 let lastMoveTime = 0;
 const MOVE_INTERVAL = 500; // ms, 2 cells per second
 
@@ -210,6 +327,9 @@ let moveStart = null;
 let moveFrom = null;
 const MOVE_DURATION = 500; // ms
 
+let prevPlayerPos = { x: player.x, y: player.y };
+
+// Update tryMove to store previous position before moving
 function tryMove(dir) {
     if (moveTarget) return; // Already moving
     let targetX = player.x;
@@ -228,6 +348,7 @@ function tryMove(dir) {
         if (isColliding(targetX, player.y)) return;
     }
     if (targetX !== player.x || targetY !== player.y) {
+        prevPlayerPos = { x: player.x, y: player.y };
         moveFrom = { x: player.x, y: player.y };
         moveTarget = { x: targetX, y: targetY };
         moveStart = performance.now();
@@ -330,4 +451,437 @@ if (!tankImg.complete) {
 if (tankImg.complete && tankImg.naturalWidth !== 0) {
     tankImgLoaded = true;
     gameLoop();
+} 
+
+// Call checkPlayerBulletBlockCollision in updatePlayer
+const originalUpdatePlayer = updatePlayer;
+updatePlayer = function() {
+    if (typeof originalUpdatePlayer === 'function') originalUpdatePlayer();
+    checkPlayerBulletBlockCollision();
+} 
+
+// Update isColliding to include purpleBlocks
+const originalIsColliding = isColliding;
+isColliding = function(x, y) {
+    if (typeof originalIsColliding === 'function' && originalIsColliding(x, y)) return true;
+    for (const block of purpleBlocks) {
+        if (
+            x < block.x + block.size &&
+            x + player.size > block.x &&
+            y < block.y + block.size &&
+            y + player.size > block.y
+        ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Update updateBullets to prevent bullets from destroying purpleBlocks
+const originalUpdateBullets = updateBullets;
+updateBullets = function() {
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const bullet = bullets[i];
+        bullet.x += Math.cos(bullet.angle) * BULLET_SPEED;
+        bullet.y += Math.sin(bullet.angle) * BULLET_SPEED;
+        // Remove bullet if out of bounds
+        if (
+            bullet.x < 0 ||
+            bullet.x > canvas.width ||
+            bullet.y < 0 ||
+            bullet.y > canvas.height
+        ) {
+            bullets.splice(i, 1);
+            continue;
+        }
+        // Check collision with purple blocks (indestructible)
+        let hitPurple = false;
+        for (const block of purpleBlocks) {
+            if (
+                bullet.x > block.x &&
+                bullet.x < block.x + block.size &&
+                bullet.y > block.y &&
+                bullet.y < block.y + block.size
+            ) {
+                bullets.splice(i, 1);
+                hitPurple = true;
+                break;
+            }
+        }
+        if (hitPurple) continue;
+        // Continue with normal block collision
+        for (let j = blocks.length - 1; j >= 0; j--) {
+            const block = blocks[j];
+            if (
+                bullet.x > block.x &&
+                bullet.x < block.x + block.size &&
+                bullet.y > block.y &&
+                bullet.y < block.y + block.size
+            ) {
+                bullets.splice(i, 1);
+                block.hp -= 1;
+                if (block.hp <= 0) {
+                    blocks.splice(j, 1);
+                }
+                break;
+            }
+        }
+    }
+} 
+
+// Place 5 green tree blocks
+const treeBlockCount = 5;
+const treeBlocks = [];
+const woodBlocks = [];
+function getRandomTreeBlockPosition() {
+    return {
+        x: Math.floor(Math.random() * GRID_COLS) * CELL_SIZE,
+        y: Math.floor(Math.random() * GRID_ROWS) * CELL_SIZE
+    };
+}
+for (let i = 0; i < treeBlockCount; i++) {
+    let pos, overlap;
+    do {
+        pos = getRandomTreeBlockPosition();
+        overlap = (pos.x === player.x && pos.y === player.y)
+            || blocks.some(b => b.x === pos.x && b.y === pos.y)
+            || bulletBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || purpleBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || treeBlocks.some(b => b.x === pos.x && b.y === pos.y);
+    } while (overlap);
+    treeBlocks.push({ x: pos.x, y: pos.y, size: CELL_SIZE, color: 'green', hp: 5, maxHp: 5 });
+}
+
+function drawTreeBlocks() {
+    for (const block of treeBlocks) {
+        ctx.fillStyle = block.color;
+        ctx.fillRect(block.x, block.y, block.size, block.size);
+        // Draw health bar
+        const barWidth = block.size * 0.8;
+        const barHeight = 6;
+        const barX = block.x + (block.size - barWidth) / 2;
+        const barY = block.y + 4;
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(barX, barY, barWidth, barHeight);
+        ctx.fillStyle = 'limegreen';
+        ctx.fillRect(barX, barY, barWidth * (block.hp / block.maxHp), barHeight);
+        // Draw health points as white number in center
+        ctx.fillStyle = 'white';
+        ctx.font = `${Math.floor(block.size / 2)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(block.hp, block.x + block.size / 2, block.y + block.size / 2);
+    }
+}
+
+function drawWoodBlocks() {
+    for (const block of woodBlocks) {
+        ctx.fillStyle = 'saddlebrown';
+        ctx.fillRect(block.x, block.y, block.size, block.size);
+        // Draw wood icon or number
+        ctx.fillStyle = 'white';
+        ctx.font = `${Math.floor(block.size / 2.5)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('W', block.x + block.size / 2, block.y + block.size / 2);
+    }
+}
+
+// In drawPlayer, after drawBlocks, drawBulletBlocks, drawPurpleBlocks:
+// drawTreeBlocks(); drawWoodBlocks();
+const originalDrawPlayer3 = drawPlayer;
+drawPlayer = function() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBlocks();
+    drawBulletBlocks();
+    drawPurpleBlocks();
+    drawTreeBlocks();
+    drawWoodBlocks();
+    drawBullets();
+    if (tankImgLoaded) {
+        ctx.save();
+        ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
+        ctx.rotate(player.angle);
+        ctx.drawImage(
+            tankImg,
+            -player.size / 2,
+            -player.size / 2,
+            player.size,
+            player.size
+        );
+        ctx.restore();
+    } else {
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.size, player.size);
+    }
+}
+
+// Update isColliding to NOT include woodBlocks (so player can collect them)
+const originalIsColliding2 = isColliding;
+isColliding = function(x, y) {
+    if (typeof originalIsColliding2 === 'function' && originalIsColliding2(x, y)) return true;
+    for (const block of treeBlocks) {
+        if (
+            x < block.x + block.size &&
+            x + player.size > block.x &&
+            y < block.y + block.size &&
+            y + player.size > block.y
+        ) {
+            return true;
+        }
+    }
+    // Do NOT block movement for woodBlocks
+    return false;
+}
+
+// Update updateBullets to allow damaging treeBlocks, and turn to wood when destroyed
+const originalUpdateBullets2 = updateBullets;
+updateBullets = function() {
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const bullet = bullets[i];
+        bullet.x += Math.cos(bullet.angle) * BULLET_SPEED;
+        bullet.y += Math.sin(bullet.angle) * BULLET_SPEED;
+        // Remove bullet if out of bounds
+        if (
+            bullet.x < 0 ||
+            bullet.x > canvas.width ||
+            bullet.y < 0 ||
+            bullet.y > canvas.height
+        ) {
+            bullets.splice(i, 1);
+            continue;
+        }
+        // Check collision with purple blocks (indestructible)
+        let hitPurple = false;
+        for (const block of purpleBlocks) {
+            if (
+                bullet.x > block.x &&
+                bullet.x < block.x + block.size &&
+                bullet.y > block.y &&
+                bullet.y < block.y + block.size
+            ) {
+                bullets.splice(i, 1);
+                hitPurple = true;
+                break;
+            }
+        }
+        if (hitPurple) continue;
+        // Check collision with tree blocks
+        let hitTree = false;
+        for (let j = treeBlocks.length - 1; j >= 0; j--) {
+            const block = treeBlocks[j];
+            if (
+                bullet.x > block.x &&
+                bullet.x < block.x + block.size &&
+                bullet.y > block.y &&
+                bullet.y < block.y + block.size
+            ) {
+                bullets.splice(i, 1);
+                block.hp -= 1;
+                if (block.hp <= 0) {
+                    // Turn into wood block
+                    woodBlocks.push({ x: block.x, y: block.y, size: block.size });
+                    treeBlocks.splice(j, 1);
+                }
+                hitTree = true;
+                break;
+            }
+        }
+        if (hitTree) continue;
+        // Continue with normal block collision
+        for (let j = blocks.length - 1; j >= 0; j--) {
+            const block = blocks[j];
+            if (
+                bullet.x > block.x &&
+                bullet.x < block.x + block.size &&
+                bullet.y > block.y &&
+                bullet.y < block.y + block.size
+            ) {
+                bullets.splice(i, 1);
+                block.hp -= 1;
+                if (block.hp <= 0) {
+                    blocks.splice(j, 1);
+                }
+                break;
+            }
+        }
+    }
+}
+
+// Check for player-woodBlock collision in updatePlayer
+function checkPlayerWoodBlockCollision() {
+    for (let i = woodBlocks.length - 1; i >= 0; i--) {
+        const block = woodBlocks[i];
+        if (
+            player.x < block.x + block.size &&
+            player.x + player.size > block.x &&
+            player.y < block.y + block.size &&
+            player.y + player.size > block.y
+        ) {
+            woodBlocks.splice(i, 1);
+            playerWood += 1;
+            updateUI();
+        }
+    }
+}
+
+// Call checkPlayerWoodBlockCollision in updatePlayer
+const originalUpdatePlayer3 = updatePlayer;
+updatePlayer = function() {
+    if (typeof originalUpdatePlayer3 === 'function') originalUpdatePlayer3();
+    checkPlayerBulletBlockCollision();
+    checkPlayerWoodBlockCollision();
+} 
+
+const waterBlockCount = 8;
+const waterBlocks = [];
+function getRandomWaterStartPosition() {
+    return {
+        x: Math.floor(Math.random() * (GRID_COLS - 2)) * CELL_SIZE,
+        y: Math.floor(Math.random() * (GRID_ROWS - 2)) * CELL_SIZE
+    };
+}
+// Place a connected group of water blocks
+(function placeWaterBlocks() {
+    let start = getRandomWaterStartPosition();
+    let positions = [start];
+    let placed = 0;
+    while (placed < waterBlockCount) {
+        let pos = positions[placed];
+        // Avoid overlap with player, other blocks, bullet, purple, tree, wood blocks
+        let overlap =
+            (pos.x === player.x && pos.y === player.y)
+            || blocks.some(b => b.x === pos.x && b.y === pos.y)
+            || bulletBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || purpleBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || treeBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || woodBlocks.some(b => b.x === pos.x && b.y === pos.y)
+            || waterBlocks.some(b => b.x === pos.x && b.y === pos.y);
+        if (!overlap) {
+            waterBlocks.push({ x: pos.x, y: pos.y, size: CELL_SIZE, color: 'deepskyblue' });
+            placed++;
+            // Add a neighbor for the next block
+            if (placed < waterBlockCount) {
+                let neighbors = [
+                    { x: pos.x + CELL_SIZE, y: pos.y },
+                    { x: pos.x - CELL_SIZE, y: pos.y },
+                    { x: pos.x, y: pos.y + CELL_SIZE },
+                    { x: pos.x, y: pos.y - CELL_SIZE }
+                ];
+                // Only add valid, not already in positions
+                for (let n of neighbors) {
+                    if (
+                        n.x >= 0 && n.x < GRID_COLS * CELL_SIZE &&
+                        n.y >= 0 && n.y < GRID_ROWS * CELL_SIZE &&
+                        !positions.some(p => p.x === n.x && p.y === n.y)
+                    ) {
+                        positions.push(n);
+                        break;
+                    }
+                }
+            }
+        } else {
+            // If overlap, try a new random start
+            start = getRandomWaterStartPosition();
+            positions = [start];
+            placed = 0;
+            waterBlocks.length = 0;
+        }
+    }
+})();
+
+function drawWaterBlocks() {
+    for (const block of waterBlocks) {
+        ctx.fillStyle = block.color;
+        ctx.fillRect(block.x, block.y, block.size, block.size);
+    }
+}
+
+// In drawPlayer, after drawWoodBlocks:
+// drawWaterBlocks();
+const originalDrawPlayer4 = drawPlayer;
+drawPlayer = function() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBlocks();
+    drawBulletBlocks();
+    drawPurpleBlocks();
+    drawTreeBlocks();
+    drawWoodBlocks();
+    drawWaterBlocks();
+    drawBullets();
+    if (tankImgLoaded) {
+        ctx.save();
+        ctx.translate(player.x + player.size / 2, player.y + player.size / 2);
+        ctx.rotate(player.angle);
+        ctx.drawImage(
+            tankImg,
+            -player.size / 2,
+            -player.size / 2,
+            player.size,
+            player.size
+        );
+        ctx.restore();
+    } else {
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.size, player.size);
+    }
+}
+
+// Check for player-waterBlock collision in updatePlayer
+function checkPlayerWaterBlockCollision() {
+    const now = Date.now();
+    for (const block of waterBlocks) {
+        if (
+            player.x < block.x + block.size &&
+            player.x + player.size > block.x &&
+            player.y < block.y + block.size &&
+            player.y + player.size > block.y
+        ) {
+            // Remove 1 HP if not already at 0 and cooldown passed
+            if (playerHealth > 0 && now - lastWaterDamageTime > 1000) {
+                playerHealth--;
+                updateUI();
+                lastWaterDamageTime = now;
+            }
+            // Teleport tank back to previous position
+            let safe = true;
+            for (const w of waterBlocks) {
+                if (
+                    prevPlayerPos.x < w.x + w.size &&
+                    prevPlayerPos.x + player.size > w.x &&
+                    prevPlayerPos.y < w.y + w.size &&
+                    prevPlayerPos.y + player.size > w.y
+                ) {
+                    safe = false;
+                    break;
+                }
+            }
+            if (safe) {
+                player.x = prevPlayerPos.x;
+                player.y = prevPlayerPos.y;
+            } else {
+                player.x = Math.floor(GRID_COLS / 2) * CELL_SIZE;
+                player.y = Math.floor(GRID_ROWS / 2) * CELL_SIZE;
+            }
+            moveTarget = null;
+            moveFrom = null;
+            moveStart = null;
+            movingDirection = null;
+            // Reset all arrow key states so movement can resume
+            for (const k of Object.keys(keysPressed)) {
+                keysPressed[k] = false;
+            }
+            break;
+        }
+    }
+}
+
+// Call checkPlayerWaterBlockCollision in updatePlayer
+const originalUpdatePlayer4 = updatePlayer;
+updatePlayer = function() {
+    if (typeof originalUpdatePlayer4 === 'function') originalUpdatePlayer4();
+    checkPlayerBulletBlockCollision();
+    checkPlayerWoodBlockCollision();
+    checkPlayerWaterBlockCollision();
 } 
