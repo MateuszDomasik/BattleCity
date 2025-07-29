@@ -1,3 +1,5 @@
+import { DestructibleBlock } from './blocks/DestructibleBlock.js';
+
 export function renderGame(state) {
   const canvas = document.getElementById('gameCanvas');
   if (!canvas) return;
@@ -6,9 +8,12 @@ export function renderGame(state) {
 
   // Draw blocks
   for (const block of state.blocks) {
-    ctx.fillStyle = block.color || 'gray';
-    ctx.fillRect(block.x, block.y, block.size, block.size);
-    // Optionally draw HP, etc.
+    if (block instanceof DestructibleBlock) {
+      block.render(ctx);
+    } else {
+      ctx.fillStyle = block.color || 'gray';
+      ctx.fillRect(block.x, block.y, block.size, block.size);
+    }
   }
 
   // Draw bullets (rotated to match direction)

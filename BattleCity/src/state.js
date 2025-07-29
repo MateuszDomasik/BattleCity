@@ -1,3 +1,5 @@
+import { DestructibleBlock } from './blocks/DestructibleBlock.js';
+
 export const GRID_COLS = 30;
 export const GRID_ROWS = 15;
 
@@ -18,7 +20,11 @@ export const state = {
     moveTarget: null, // {x, y}
     moveDir: null, // {dx, dy}
   },
-  blocks: [],
+  blocks: [
+    // Example: place a destructible block in the top left and one in the center
+    new DestructibleBlock(0, 0),
+    new DestructibleBlock(Math.floor(GRID_COLS / 2) * 48, Math.floor(GRID_ROWS / 2) * 48 + 48),
+  ],
   bullets: [],
   backpack: [null, null, null, null, null],
   gameMode: 'play', // or 'edit', 'shop', etc.
@@ -105,6 +111,28 @@ export function updateState(state) {
     bullet.x += bullet.dx;
     bullet.y += bullet.dy;
   }
+
+  // Bullet-block collision and block destruction
+  for (let i = state.bullets.length - 1; i >= 0; i--) {
+    const bullet = state.bullets[i];
+    for (let j = state.blocks.length - 1; j >= 0; j--) {
+      const block = state.blocks[j];
+      if (block instanceof DestructibleBlock) {
+        // AABB collision
+        if (
+          bullet.x > block.x && bullet.x < block.x + block.size &&
+          bullet.y > block.y && bullet.y < block.y + block.size
+        ) {
+          block.hp--;
+          state.bullets.splice(i, 1);
+          if (block.hp <= 0) {
+            state.blocks.splice(j, 1);
+          }
+          break;
+        }
+      }
+    }
+  }
   // Remove bullets out of bounds
   state.bullets = state.bullets.filter(b =>
     b.x >= 0 && b.x <= GRID_COLS * size && b.y >= 0 && b.y <= GRID_ROWS * size
@@ -114,7 +142,7 @@ export function updateState(state) {
     const { x, y } = state._placeBlockPos;
     const occupied = state.blocks.some(b => b.x === x && b.y === y);
     if (!occupied) {
-      state.blocks.push({ x, y, size: size, color: 'gray', hp: 3, maxHp: 3 });
+      state.blocks.push(new DestructibleBlock(x, y));
       state.backpack[state.placingBlockIndex] = null;
       state.placingBlockIndex = null;
       state.gameMode = 'play';
