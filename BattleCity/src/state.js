@@ -5,6 +5,9 @@ import { WaterBlock } from './blocks/WaterBlock.js';
 import { TreeBlock } from './blocks/TreeBlock.js';
 import { WoodBlock } from './blocks/WoodBlock.js';
 import { LightBrownBlock } from './blocks/LightBrownBlock.js';
+import { SteelBlock } from './blocks/SteelBlock.js';
+import { GrayBlock } from './blocks/GrayBlock.js';
+import { Enemy } from './enemy.js';
 
 export const GRID_COLS = 30;
 export const GRID_ROWS = 15;
@@ -60,6 +63,25 @@ for (let i = 0; i < 8; i++) {
   blocks.push(new TreeBlock(pos.x, pos.y));
 }
 
+// Add SteelBlocks
+for (let i = 0; i < 6; i++) {
+  const pos = getRandomGridPosition(blockPositions);
+  blockPositions.push(pos);
+  blocks.push(new SteelBlock(pos.x, pos.y));
+}
+
+// Add enemies
+const enemies = [];
+for (let i = 0; i < 2; i++) {
+  const pos = getRandomGridPosition(blockPositions);
+  // Ensure enemy doesn't spawn too close to player
+  const distanceToPlayer = Math.sqrt((pos.x - playerStart.x) ** 2 + (pos.y - playerStart.y) ** 2);
+  if (distanceToPlayer > 200) { // At least 4 cells away from player
+    blockPositions.push(pos);
+    enemies.push(new Enemy(pos.x, pos.y));
+  }
+}
+
 export const state = {
   player: {
     x: playerStart.x,
@@ -71,6 +93,8 @@ export const state = {
     maxHealth: 10,
     bullets: 10,
     wood: 5,
+    steel: 0, // Add steel resource
+    gold: 0, // Add gold resource
     speed: 96, // 2 cells per second (48*2)
     shoot: false,
     moving: false,
@@ -82,6 +106,7 @@ export const state = {
     _flickerStartTime: 0, // Track when flickering started
   },
   blocks,
+  enemies,
   bullets: [],
   backpack: [null, null, null, null, null],
   gameMode: 'play', // or 'edit', 'shop', etc.
@@ -178,6 +203,11 @@ export function updateState(state) {
     }
   }
 
+  // Update enemies
+  for (const enemy of state.enemies) {
+    enemy.update(dt, state.player, state.blocks);
+  }
+
   // Bullet-block collision
   for (let i = state.bullets.length - 1; i >= 0; i--) {
     const bullet = state.bullets[i];
@@ -224,6 +254,26 @@ export function updateState(state) {
         }
       }
       
+      // Check collision with SteelBlock
+      if (block instanceof SteelBlock) {
+        if (
+          bullet.x < block.x + block.size &&
+          bullet.x + bullet.size > block.x &&
+          bullet.y < block.y + block.size &&
+          bullet.y + bullet.size > block.y
+        ) {
+          const destroyed = block.takeDamage ? block.takeDamage() : false;
+          if (destroyed) {
+            // Replace steel with gray block
+            state.blocks.splice(j, 1);
+            state.blocks.push(new GrayBlock(block.x, block.y));
+          }
+          state.bullets.splice(i, 1);
+          bulletHit = true;
+          break;
+        }
+      }
+      
       // Check collision with IndestructibleBlock
       if (block instanceof IndestructibleBlock) {
         if (
@@ -243,6 +293,145 @@ export function updateState(state) {
       // Remove bullets that go off screen
       if (bullet.x < 0 || bullet.x > GRID_COLS * size || bullet.y < 0 || bullet.y > GRID_ROWS * size) {
         state.bullets.splice(i, 1);
+      }
+    }
+  }
+
+  // Player bullet collision with enemies
+  for (let i = state.bullets.length - 1; i >= 0; i--) {
+    const bullet = state.bullets[i];
+    let bulletHit = false;
+
+    for (let j = state.enemies.length - 1; j >= 0; j--) {
+      const enemy = state.enemies[j];
+      if (
+        bullet.x < enemy.x + enemy.size &&
+        bullet.x + bullet.size > enemy.x &&
+        bullet.y < enemy.y + enemy.size &&
+        bullet.y + bullet.size > enemy.y
+      ) {
+        const destroyed = enemy.takeDamage();
+        if (destroyed) {
+          state.enemies.splice(j, 1);
+          // Reward player with gold for destroying enemy
+          p.gold += 5;
+        }
+        state.bullets.splice(i, 1);
+        bulletHit = true;
+        break;
+      }
+    }
+  }
+
+  // Enemy bullet collision with player
+  for (const enemy of state.enemies) {
+    for (let i = enemy.bullets.length - 1; i >= 0; i--) {
+      const bullet = enemy.bullets[i];
+      if (
+        bullet.x < p.x + p.size &&
+        bullet.x + bullet.size > p.x &&
+        bullet.y < p.y + p.size &&
+        bullet.y + bullet.size > p.y
+      ) {
+        // Damage player
+        p.health = Math.max(0, p.health - 1);
+        p._flickering = true;
+        p._flickerStartTime = performance.now();
+        setTimeout(() => { p._flickering = false; }, 1000); // 1 second flickering
+        
+        // Remove enemy bullet
+        enemy.bullets.splice(i, 1);
+      }
+    }
+  }
+
+  // Enemy bullet collision with blocks
+  for (const enemy of state.enemies) {
+    for (let i = enemy.bullets.length - 1; i >= 0; i--) {
+      const bullet = enemy.bullets[i];
+      let bulletHit = false;
+
+      for (let j = state.blocks.length - 1; j >= 0; j--) {
+        const block = state.blocks[j];
+        
+        // Check collision with DestructibleBlock
+        if (block instanceof DestructibleBlock) {
+          if (
+            bullet.x < block.x + block.size &&
+            bullet.x + bullet.size > block.x &&
+            bullet.y < block.y + block.size &&
+            bullet.y + bullet.size > block.y
+          ) {
+            const destroyed = block.takeDamage ? block.takeDamage() : false;
+            if (destroyed) {
+              state.blocks.splice(j, 1);
+            }
+            enemy.bullets.splice(i, 1);
+            bulletHit = true;
+            break;
+          }
+        }
+        
+        // Check collision with TreeBlock
+        if (block instanceof TreeBlock) {
+          if (
+            bullet.x < block.x + block.size &&
+            bullet.x + bullet.size > block.x &&
+            bullet.y < block.y + block.size &&
+            bullet.y + bullet.size > block.y
+          ) {
+            const destroyed = block.takeDamage ? block.takeDamage() : false;
+            if (destroyed) {
+              // Replace tree with wood block
+              state.blocks.splice(j, 1);
+              state.blocks.push(new WoodBlock(block.x, block.y));
+            }
+            enemy.bullets.splice(i, 1);
+            bulletHit = true;
+            break;
+          }
+        }
+        
+        // Check collision with IndestructibleBlock
+        if (block instanceof IndestructibleBlock) {
+          if (
+            bullet.x < block.x + block.size &&
+            bullet.x + bullet.size > block.x &&
+            bullet.y < block.y + block.size &&
+            bullet.y + bullet.size > block.y
+          ) {
+            enemy.bullets.splice(i, 1);
+            bulletHit = true;
+            break;
+          }
+        }
+        
+        // Check collision with SteelBlock
+        if (block instanceof SteelBlock) {
+          if (
+            bullet.x < block.x + block.size &&
+            bullet.x + bullet.size > block.x &&
+            bullet.y < block.y + block.size &&
+            bullet.y + bullet.size > block.y
+          ) {
+            const destroyed = block.takeDamage ? block.takeDamage() : false;
+            if (destroyed) {
+              // Replace steel with gray block
+              state.blocks.splice(j, 1);
+              state.blocks.push(new GrayBlock(block.x, block.y));
+            }
+            enemy.bullets.splice(i, 1);
+            bulletHit = true;
+            break;
+          }
+        }
+      }
+      
+      if (!bulletHit) {
+        // Remove enemy bullets that go off screen
+        if (bullet.x < 0 || bullet.x > GRID_COLS * size || bullet.y < 0 || bullet.y > GRID_ROWS * size) {
+          enemy.bullets.splice(i, 1);
+        }
       }
     }
   }
@@ -275,6 +464,22 @@ export function updateState(state) {
         p.y + p.size > block.y
       ) {
         p.wood += 1;
+        state.blocks.splice(i, 1);
+      }
+    }
+  }
+
+  // After WoodBlock collision, add GrayBlock collision
+  for (let i = state.blocks.length - 1; i >= 0; i--) {
+    const block = state.blocks[i];
+    if (block instanceof GrayBlock) {
+      if (
+        p.x < block.x + block.size &&
+        p.x + p.size > block.x &&
+        p.y < block.y + block.size &&
+        p.y + p.size > block.y
+      ) {
+        p.steel += 1; // Add steel resource
         state.blocks.splice(i, 1);
       }
     }

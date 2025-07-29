@@ -5,6 +5,8 @@ import { WaterBlock } from './blocks/WaterBlock.js';
 import { TreeBlock } from './blocks/TreeBlock.js';
 import { WoodBlock } from './blocks/WoodBlock.js';
 import { LightBrownBlock } from './blocks/LightBrownBlock.js';
+import { SteelBlock } from './blocks/SteelBlock.js';
+import { GrayBlock } from './blocks/GrayBlock.js';
 
 export function renderGame(state) {
   const canvas = document.getElementById('gameCanvas');
@@ -14,12 +16,17 @@ export function renderGame(state) {
 
   // Draw blocks
   for (const block of state.blocks) {
-    if (block instanceof DestructibleBlock || block instanceof BulletBlock || block instanceof IndestructibleBlock || block instanceof WaterBlock || block instanceof TreeBlock || block instanceof WoodBlock || block instanceof LightBrownBlock) {
+    if (block instanceof DestructibleBlock || block instanceof BulletBlock || block instanceof IndestructibleBlock || block instanceof WaterBlock || block instanceof TreeBlock || block instanceof WoodBlock || block instanceof LightBrownBlock || block instanceof SteelBlock || block instanceof GrayBlock) {
       block.render(ctx);
     } else {
       ctx.fillStyle = block.color || 'gray';
       ctx.fillRect(block.x, block.y, block.size, block.size);
     }
+  }
+
+  // Draw enemies
+  for (const enemy of state.enemies) {
+    enemy.render(ctx);
   }
 
   // Draw preview block with transparency

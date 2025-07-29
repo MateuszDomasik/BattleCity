@@ -23,6 +23,18 @@ export function renderUI(state) {
     woodCount.textContent = state.player.wood;
   }
 
+  // Update steel counter
+  const steelCount = document.getElementById('steelCount');
+  if (steelCount) {
+    steelCount.textContent = state.player.steel;
+  }
+
+  // Update gold counter
+  const goldCount = document.getElementById('goldCount');
+  if (goldCount) {
+    goldCount.textContent = state.player.gold;
+  }
+
   // Show edit mode indicator
   const shopButton = document.getElementById('shopButton');
   if (shopButton) {
