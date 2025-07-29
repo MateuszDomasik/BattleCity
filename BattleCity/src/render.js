@@ -11,10 +11,14 @@ export function renderGame(state) {
     // Optionally draw HP, etc.
   }
 
-  // Draw bullets
+  // Draw bullets (rotated to match direction)
   for (const bullet of state.bullets) {
+    ctx.save();
+    ctx.translate(bullet.x, bullet.y);
+    ctx.rotate(Math.atan2(bullet.dy, bullet.dx));
     ctx.fillStyle = 'white';
-    ctx.fillRect(bullet.x - 5, bullet.y - 2, 10, 4);
+    ctx.fillRect(-5, -2, 10, 4);
+    ctx.restore();
   }
 
   // Draw player (tank image)
@@ -23,7 +27,7 @@ export function renderGame(state) {
   if (tankImg && tankImg.complete && tankImg.naturalWidth > 0) {
     ctx.save();
     ctx.translate(p.x + p.size / 2, p.y + p.size / 2);
-    ctx.rotate(p.angle);
+    ctx.rotate(p.angle); // Restore to just p.angle
     ctx.drawImage(tankImg, -p.size / 2, -p.size / 2, p.size, p.size);
     ctx.restore();
   } else {

@@ -3,8 +3,8 @@ export const GRID_ROWS = 15;
 
 export const state = {
   player: {
-    x: 0,
-    y: 0,
+    x: Math.floor(GRID_COLS / 2) * 48,
+    y: Math.floor(GRID_ROWS / 2) * 48,
     size: 48,
     color: 'yellow',
     angle: 0,
@@ -85,8 +85,8 @@ export function updateState(state) {
   // Shooting
   if (p.shoot && p.bullets > 0 && state.gameMode === 'play') {
     if (!p._shotThisFrame) {
-      // Bullet direction based on angle
-      const angle = p.angle;
+      // Bullet direction based on angle, adjusted for tank image rotation
+      const angle = p.angle - Math.PI / 2;
       const speed = 12;
       state.bullets.push({
         x: p.x + p.size / 2,
