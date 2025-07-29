@@ -1,4 +1,5 @@
 import { DestructibleBlock } from './blocks/DestructibleBlock.js';
+import { BulletBlock } from './blocks/BulletBlock.js';
 
 export function renderGame(state) {
   const canvas = document.getElementById('gameCanvas');
@@ -8,7 +9,7 @@ export function renderGame(state) {
 
   // Draw blocks
   for (const block of state.blocks) {
-    if (block instanceof DestructibleBlock) {
+    if (block instanceof DestructibleBlock || block instanceof BulletBlock) {
       block.render(ctx);
     } else {
       ctx.fillStyle = block.color || 'gray';

@@ -1,12 +1,38 @@
 import { DestructibleBlock } from './blocks/DestructibleBlock.js';
+import { BulletBlock } from './blocks/BulletBlock.js';
 
 export const GRID_COLS = 30;
 export const GRID_ROWS = 15;
 
+function getRandomGridPosition(exclude = []) {
+  let x, y, tries = 0;
+  do {
+    x = Math.floor(Math.random() * GRID_COLS) * 48;
+    y = Math.floor(Math.random() * GRID_ROWS) * 48;
+    tries++;
+  } while (exclude.some(pos => pos.x === x && pos.y === y) && tries < 100);
+  return { x, y };
+}
+
+const playerStart = { x: Math.floor(GRID_COLS / 2) * 48, y: Math.floor(GRID_ROWS / 2) * 48 };
+const blockPositions = [playerStart];
+const blocks = [];
+for (let i = 0; i < 15; i++) {
+  const pos = getRandomGridPosition(blockPositions);
+  blockPositions.push(pos);
+  blocks.push(new DestructibleBlock(pos.x, pos.y));
+}
+// Add 5 BulletBlocks
+for (let i = 0; i < 5; i++) {
+  const pos = getRandomGridPosition(blockPositions);
+  blockPositions.push(pos);
+  blocks.push(new BulletBlock(pos.x, pos.y));
+}
+
 export const state = {
   player: {
-    x: Math.floor(GRID_COLS / 2) * 48,
-    y: Math.floor(GRID_ROWS / 2) * 48,
+    x: playerStart.x,
+    y: playerStart.y,
     size: 48,
     color: 'yellow',
     angle: 0,
@@ -20,11 +46,7 @@ export const state = {
     moveTarget: null, // {x, y}
     moveDir: null, // {dx, dy}
   },
-  blocks: [
-    // Example: place a destructible block in the top left and one in the center
-    new DestructibleBlock(0, 0),
-    new DestructibleBlock(Math.floor(GRID_COLS / 2) * 48, Math.floor(GRID_ROWS / 2) * 48 + 48),
-  ],
+  blocks,
   bullets: [],
   backpack: [null, null, null, null, null],
   gameMode: 'play', // or 'edit', 'shop', etc.
@@ -57,8 +79,9 @@ export function updateState(state) {
         // Calculate target cell
         const tx = Math.round(p.x / size) * size + dir.dx * size;
         const ty = Math.round(p.y / size) * size + dir.dy * size;
-        // Check collision with blocks
+        // Check collision with blocks (only DestructibleBlock blocks movement)
         const collision = state.blocks.some(b =>
+          b instanceof DestructibleBlock &&
           tx < b.x + b.size && tx + size > b.x &&
           ty < b.y + b.size && ty + size > b.y
         );
@@ -84,6 +107,23 @@ export function updateState(state) {
       } else {
         p.x += (dx/dist) * moveDist;
         p.y += (dy/dist) * moveDist;
+      }
+    }
+  }
+
+  // After player movement, check for BulletBlock collision (require full overlap)
+  for (let i = state.blocks.length - 1; i >= 0; i--) {
+    const block = state.blocks[i];
+    if (block instanceof BulletBlock) {
+      // Require tank to be fully covering the block
+      if (
+        p.x >= block.x &&
+        p.x + p.size <= block.x + block.size &&
+        p.y >= block.y &&
+        p.y + p.size <= block.y + block.size
+      ) {
+        p.bullets += 5;
+        state.blocks.splice(i, 1);
       }
     }
   }
