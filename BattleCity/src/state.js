@@ -1,6 +1,7 @@
 import { DestructibleBlock } from './blocks/DestructibleBlock.js';
 import { BulletBlock } from './blocks/BulletBlock.js';
 import { IndestructibleBlock } from './blocks/IndestructibleBlock.js';
+import { WaterBlock } from './blocks/WaterBlock.js';
 
 export const GRID_COLS = 30;
 export const GRID_ROWS = 15;
@@ -35,6 +36,19 @@ for (let i = 0; i < 10; i++) {
   blockPositions.push(pos);
   blocks.push(new IndestructibleBlock(pos.x, pos.y));
 }
+// After adding IndestructibleBlocks
+// Add 15 connected water blocks in a lake pattern
+const waterPositions = [
+  {x: 5 * 48, y: 3 * 48}, {x: 6 * 48, y: 3 * 48}, {x: 7 * 48, y: 3 * 48},
+  {x: 5 * 48, y: 4 * 48}, {x: 6 * 48, y: 4 * 48}, {x: 7 * 48, y: 4 * 48}, {x: 8 * 48, y: 4 * 48},
+  {x: 5 * 48, y: 5 * 48}, {x: 6 * 48, y: 5 * 48}, {x: 7 * 48, y: 5 * 48}, {x: 8 * 48, y: 5 * 48},
+  {x: 6 * 48, y: 6 * 48}, {x: 7 * 48, y: 6 * 48}, {x: 8 * 48, y: 6 * 48},
+  {x: 7 * 48, y: 7 * 48}
+];
+for (const pos of waterPositions) {
+  blockPositions.push(pos);
+  blocks.push(new WaterBlock(pos.x, pos.y));
+}
 
 export const state = {
   player: {
@@ -52,6 +66,10 @@ export const state = {
     moving: false,
     moveTarget: null, // {x, y}
     moveDir: null, // {dx, dy}
+    _waterDamageCooldown: false, // New property for water damage cooldown
+    _lastSafePosition: { x: playerStart.x, y: playerStart.y }, // Store last safe position
+    _flickering: false, // Track flickering animation
+    _flickerStartTime: 0, // Track when flickering started
   },
   blocks,
   bullets: [],
@@ -192,6 +210,54 @@ export function updateState(state) {
   state.bullets = state.bullets.filter(b =>
     b.x >= 0 && b.x <= GRID_COLS * size && b.y >= 0 && b.y <= GRID_ROWS * size
   );
+
+  // After BulletBlock collision, add water collision
+  for (let i = state.blocks.length - 1; i >= 0; i--) {
+    const block = state.blocks[i];
+    if (block instanceof WaterBlock) {
+      if (
+        p.x < block.x + block.size &&
+        p.x + p.size > block.x &&
+        p.y < block.y + block.size &&
+        p.y + p.size > block.y
+      ) {
+        // Damage player when touching water
+        if (!p._waterDamageCooldown) {
+          p.health = Math.max(0, p.health - 1);
+          p._waterDamageCooldown = true;
+          p._flickering = true;
+          p._flickerStartTime = performance.now();
+          setTimeout(() => { p._waterDamageCooldown = false; }, 1000); // 1 second cooldown
+          setTimeout(() => { p._flickering = false; }, 1000); // 1 second flickering
+        }
+        // Teleport back to last safe position
+        p.x = p._lastSafePosition.x;
+        p.y = p._lastSafePosition.y;
+        p.moving = false;
+        p.moveTarget = null;
+        p.moveDir = null;
+      }
+    }
+  }
+  // Update last safe position when not touching water
+  let touchingWater = false;
+  for (const block of state.blocks) {
+    if (block instanceof WaterBlock) {
+      if (
+        p.x < block.x + block.size &&
+        p.x + p.size > block.x &&
+        p.y < block.y + block.size &&
+        p.y + p.size > block.y
+      ) {
+        touchingWater = true;
+        break;
+      }
+    }
+  }
+  if (!touchingWater) {
+    p._lastSafePosition = { x: p.x, y: p.y };
+  }
+
   // Block placement (edit mode)
   if (state.gameMode === 'placingBlock' && state.placingBlockIndex !== null && state._placeBlockPos) {
     const { x, y } = state._placeBlockPos;

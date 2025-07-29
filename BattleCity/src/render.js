@@ -1,5 +1,7 @@
 import { DestructibleBlock } from './blocks/DestructibleBlock.js';
 import { BulletBlock } from './blocks/BulletBlock.js';
+import { IndestructibleBlock } from './blocks/IndestructibleBlock.js';
+import { WaterBlock } from './blocks/WaterBlock.js';
 
 export function renderGame(state) {
   const canvas = document.getElementById('gameCanvas');
@@ -9,7 +11,7 @@ export function renderGame(state) {
 
   // Draw blocks
   for (const block of state.blocks) {
-    if (block instanceof DestructibleBlock || block instanceof BulletBlock) {
+    if (block instanceof DestructibleBlock || block instanceof BulletBlock || block instanceof IndestructibleBlock || block instanceof WaterBlock) {
       block.render(ctx);
     } else {
       ctx.fillStyle = block.color || 'gray';
@@ -30,15 +32,22 @@ export function renderGame(state) {
   // Draw player (tank image)
   const p = state.player;
   const tankImg = document.getElementById('tankSprite');
-  if (tankImg && tankImg.complete && tankImg.naturalWidth > 0) {
-    ctx.save();
-    ctx.translate(p.x + p.size / 2, p.y + p.size / 2);
-    ctx.rotate(p.angle); // Restore to just p.angle
-    ctx.drawImage(tankImg, -p.size / 2, -p.size / 2, p.size, p.size);
-    ctx.restore();
-  } else {
-    ctx.fillStyle = p.color;
-    ctx.fillRect(p.x, p.y, p.size, p.size);
+  
+  // Check if tank should be visible (for flickering animation)
+  const shouldShowTank = !p._flickering || 
+    (p._flickering && Math.floor((performance.now() - p._flickerStartTime) / 100) % 2 === 0);
+  
+  if (shouldShowTank) {
+    if (tankImg && tankImg.complete && tankImg.naturalWidth > 0) {
+      ctx.save();
+      ctx.translate(p.x + p.size / 2, p.y + p.size / 2);
+      ctx.rotate(p.angle); // Restore to just p.angle
+      ctx.drawImage(tankImg, -p.size / 2, -p.size / 2, p.size, p.size);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    }
   }
   // Optionally draw UI, backpack, etc.
 } 
