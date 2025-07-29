@@ -22,6 +22,14 @@ export function renderGame(state) {
     }
   }
 
+  // Draw preview block with transparency
+  if (state.gameMode === 'edit' && state.previewBlock) {
+    ctx.save();
+    ctx.globalAlpha = 0.5; // Make it 50% transparent
+    state.previewBlock.render(ctx);
+    ctx.restore();
+  }
+
   // Draw bullets (rotated to match direction)
   for (const bullet of state.bullets) {
     ctx.save();

@@ -89,6 +89,8 @@ export const state = {
   keysPressed: {},
   lastMoveTime: performance.now(),
   shopOpen: false, // Track if shop is open
+  cursorPosition: { x: 0, y: 0 }, // Track cursor position for preview
+  previewBlock: null, // Preview block for edit mode
 };
 
 function isAlignedToGrid(val, size) {

@@ -168,6 +168,40 @@ export function setupBackpackHandlers() {
   // Add map click handler for placing blocks
   const canvas = document.getElementById('gameCanvas');
   if (canvas) {
+    // Add cursor tracking for preview
+    canvas.addEventListener('mousemove', (event) => {
+      if (state.gameMode === 'edit' && state.placingBlockIndex !== null) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        // Check if cursor is within canvas bounds
+        if (x >= 0 && x < canvas.width && y >= 0 && y < canvas.height) {
+          // Convert to grid position
+          const gridX = Math.floor(x / 48) * 48;
+          const gridY = Math.floor(y / 48) * 48;
+          
+          state.cursorPosition = { x: gridX, y: gridY };
+          
+          // Create preview block
+          const selectedItem = state.backpack[state.placingBlockIndex];
+          if (selectedItem && selectedItem.class) {
+            state.previewBlock = new selectedItem.class(gridX, gridY);
+          }
+        } else {
+          // Clear preview when cursor is outside canvas
+          state.previewBlock = null;
+        }
+      }
+    });
+    
+    // Clear preview when mouse leaves canvas
+    canvas.addEventListener('mouseleave', () => {
+      if (state.gameMode === 'edit') {
+        state.previewBlock = null;
+      }
+    });
+    
     canvas.addEventListener('click', (event) => {
       if (state.gameMode === 'edit' && state.placingBlockIndex !== null) {
         const rect = canvas.getBoundingClientRect();
@@ -196,6 +230,7 @@ export function setupBackpackHandlers() {
             // Exit edit mode
             state.gameMode = 'play';
             state.placingBlockIndex = null;
+            state.previewBlock = null; // Clear preview block
             
             // Remove visual selection
             slots.forEach(s => s.classList.remove('selected'));
@@ -203,7 +238,6 @@ export function setupBackpackHandlers() {
             // Update UI
             renderUI(state);
             renderBackpack(); // Explicit call to update backpack display
-            
           }
         } else {
           // console.log('Position occupied, cannot place block'); // Removed debugging
