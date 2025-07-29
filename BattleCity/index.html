@@ -8,10 +8,26 @@
 </head>
 <body>
     <div id="ui" style="width:100%;display:flex;justify-content:center;align-items:center;margin-bottom:10px;gap:40px;"></div>
-    <canvas id="gameCanvas" width="500" height="500"></canvas>
+    <canvas id="gameCanvas" width="1440" height="720"></canvas>
     <!-- Hidden tank sprite, 32x32 px, local file -->
     <img id="tankSprite" src="assets/tank.jpg" width="32" height="32" style="display:none;" alt="Tank Sprite">
     <div id="backpack" style="width:100%;display:flex;justify-content:center;align-items:center;margin-top:20px;gap:16px;"></div>
-    <script src="script.js"></script>
+    
+    <!-- Import modular files -->
+    <script type="module">
+        import { startGameLoop } from './src/game.js';
+        import { setupInputHandlers } from './src/input.js';
+        import { renderUI } from './src/ui.js';
+        import { state } from './src/state.js';
+        
+        // Initialize the game
+        setupInputHandlers();
+        
+        // Start the game loop
+        startGameLoop();
+        
+        // Initial UI render
+        renderUI(state);
+    </script>
 </body>
 </html>

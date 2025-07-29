@@ -1,3 +1,8 @@
+const BACKPACK_SIZE = 5;
+let moveTarget = null;
+let backpack = new Array(BACKPACK_SIZE).fill(null);
+let movingDirection = null;
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -126,6 +131,7 @@ function updateUI() {
         + `<span style='color:saddlebrown;font-family:Arial;font-size:20px;'>${playerWood}</span>`
         + `</div>`;
     ui.innerHTML = healthBar + bulletCounter + woodCounter;
+    renderBackpack();
 }
 
 // Call updateUI at start
@@ -322,7 +328,6 @@ let lastWaterDamageTime = 0;
 let lastMoveTime = 0;
 const MOVE_INTERVAL = 500; // ms, 2 cells per second
 
-let moveTarget = null;
 let moveStart = null;
 let moveFrom = null;
 const MOVE_DURATION = 500; // ms
@@ -362,7 +367,6 @@ let arrowKeyTimers = {};
 // On keydown, start timer if not already started
 // On keyup, if held less than threshold, only rotate; if held longer, rotate and move
 
-let movingDirection = null;
 let moveHoldTimer = null;
 
 function startMoveHold(dirKey) {
@@ -731,7 +735,6 @@ const originalUpdatePlayer3 = updatePlayer;
 updatePlayer = function() {
     if (typeof originalUpdatePlayer3 === 'function') originalUpdatePlayer3();
     checkPlayerBulletBlockCollision();
-    checkPlayerWoodBlockCollision();
 } 
 
 const waterBlockCount = 8;
@@ -939,11 +942,74 @@ drawPlayer = function() {
     }
 } 
 
-const BACKPACK_SIZE = 5;
-let backpack = new Array(BACKPACK_SIZE).fill(null);
+let placingBlockIndex = null;
+let editModeBanner = null;
+let blockCursorOverlay = null;
+
+function showEditModeBanner() {
+    if (!editModeBanner) {
+        editModeBanner = document.createElement('div');
+        editModeBanner.id = 'edit-mode-banner';
+        editModeBanner.style.position = 'fixed';
+        editModeBanner.style.top = '20px';
+        editModeBanner.style.left = '50%';
+        editModeBanner.style.transform = 'translateX(-50%)';
+        editModeBanner.style.background = 'rgba(255,255,0,0.95)';
+        editModeBanner.style.color = '#222';
+        editModeBanner.style.fontFamily = 'Arial';
+        editModeBanner.style.fontWeight = 'bold';
+        editModeBanner.style.fontSize = '22px';
+        editModeBanner.style.padding = '10px 32px';
+        editModeBanner.style.borderRadius = '8px';
+        editModeBanner.style.zIndex = 2000;
+        editModeBanner.innerText = 'Edit mode: Click on the map to place your block';
+        document.body.appendChild(editModeBanner);
+    }
+}
+function hideEditModeBanner() {
+    if (editModeBanner && editModeBanner.parentNode) {
+        editModeBanner.parentNode.removeChild(editModeBanner);
+        editModeBanner = null;
+    }
+}
+
+function showBlockCursorOverlay() {
+    if (!blockCursorOverlay) {
+        blockCursorOverlay = document.createElement('div');
+        blockCursorOverlay.id = 'block-cursor-overlay';
+        blockCursorOverlay.style.position = 'fixed';
+        blockCursorOverlay.style.pointerEvents = 'none';
+        blockCursorOverlay.style.width = player.size + 'px';
+        blockCursorOverlay.style.height = player.size + 'px';
+        blockCursorOverlay.style.background = 'rgba(210,180,140,0.5)'; // sandybrown semi-transparent
+        blockCursorOverlay.style.border = '2px solid #b97a56';
+        blockCursorOverlay.style.borderRadius = '8px';
+        blockCursorOverlay.style.zIndex = 2001;
+        document.body.appendChild(blockCursorOverlay);
+    }
+    document.body.style.cursor = 'none';
+    document.addEventListener('mousemove', moveBlockCursorOverlay);
+}
+function moveBlockCursorOverlay(e) {
+    const canvasRect = canvas.getBoundingClientRect();
+    let x = Math.floor((e.clientX - canvasRect.left) / player.size) * player.size + canvasRect.left;
+    let y = Math.floor((e.clientY - canvasRect.top) / player.size) * player.size + canvasRect.top;
+    blockCursorOverlay.style.left = x + 'px';
+    blockCursorOverlay.style.top = y + 'px';
+}
+function hideBlockCursorOverlay() {
+    if (blockCursorOverlay && blockCursorOverlay.parentNode) {
+        blockCursorOverlay.parentNode.removeChild(blockCursorOverlay);
+        blockCursorOverlay = null;
+    }
+    document.body.style.cursor = '';
+    document.removeEventListener('mousemove', moveBlockCursorOverlay);
+}
 
 function renderBackpack() {
+    console.log('renderBackpack called');
     const backpackDiv = document.getElementById('backpack');
+    if (!backpackDiv) return;
     backpackDiv.innerHTML = '';
     for (let i = 0; i < BACKPACK_SIZE; i++) {
         const slot = document.createElement('div');
@@ -957,13 +1023,74 @@ function renderBackpack() {
         slot.style.alignItems = 'center';
         slot.style.fontSize = '24px';
         slot.style.color = '#888';
-        slot.innerText = '';
+        if (backpack[i] === 'block') {
+            slot.style.background = 'sandybrown';
+            slot.style.border = '2px solid #b97a56';
+            slot.style.color = 'white';
+            slot.innerText = 'B';
+            slot.style.cursor = 'pointer';
+            slot.onclick = function() {
+                console.log('Backpack slot clicked', i);
+                placingBlockIndex = i;
+                backpackDiv.childNodes.forEach((el, idx) => {
+                    el.style.outline = idx === i ? '2px solid yellow' : '';
+                });
+                showEditModeBanner();
+                showBlockCursorOverlay();
+            };
+        } else {
+            slot.innerText = '';
+            slot.onclick = null;
+        }
         backpackDiv.appendChild(slot);
     }
 }
 
+if (canvas) {
+    canvas.addEventListener('click', function(e) {
+        if (placingBlockIndex === null) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / player.size) * player.size;
+        const y = Math.floor((e.clientY - rect.top) / player.size) * player.size;
+        // Check if cell is empty (no block, no player)
+        const occupied = blocks.some(b => b.x === x && b.y === y)
+            || shopBlocks.some(b => b.x === x && b.y === y)
+            || waterBlocks.some(b => b.x === x && b.y === y)
+            || treeBlocks.some(b => b.x === x && b.y === y)
+            || woodBlocks.some(b => b.x === x && b.y === y)
+            || bulletBlocks.some(b => b.x === x && b.y === y)
+            || purpleBlocks.some(b => b.x === x && b.y === y)
+            || (player.x === x && player.y === y);
+        if (!occupied) {
+            blocks.push({ x, y, size: player.size, color: 'gray', hp: 3, maxHp: 3 });
+            backpack[placingBlockIndex] = null;
+            placingBlockIndex = null;
+            renderBackpack();
+            drawPlayer();
+            hideEditModeBanner();
+            hideBlockCursorOverlay();
+        }
+    });
+}
+
 // Call at start
 renderBackpack(); 
+
+// Call renderBackpack after page load and after every UI update
+window.addEventListener('DOMContentLoaded', function() {
+    // Add a test button for debugging
+    const testBtn = document.createElement('button');
+    testBtn.innerText = 'Test renderBackpack()';
+    testBtn.style.position = 'fixed';
+    testBtn.style.top = '10px';
+    testBtn.style.left = '10px';
+    testBtn.onclick = function() {
+        console.log('Test button clicked, calling renderBackpack');
+        renderBackpack();
+    };
+    document.body.appendChild(testBtn);
+    renderBackpack();
+});
 
 const shopBlockCount = 2;
 const shopBlocks = [];
@@ -1084,6 +1211,7 @@ function checkPlayerShopBlockCollision() {
 const originalRenderBackpack = renderBackpack;
 renderBackpack = function() {
     const backpackDiv = document.getElementById('backpack');
+    if (!backpackDiv) return;
     backpackDiv.innerHTML = '';
     for (let i = 0; i < BACKPACK_SIZE; i++) {
         const slot = document.createElement('div');
