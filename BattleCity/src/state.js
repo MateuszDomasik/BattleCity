@@ -1,5 +1,6 @@
 import { DestructibleBlock } from './blocks/DestructibleBlock.js';
 import { BulletBlock } from './blocks/BulletBlock.js';
+import { IndestructibleBlock } from './blocks/IndestructibleBlock.js';
 
 export const GRID_COLS = 30;
 export const GRID_ROWS = 15;
@@ -27,6 +28,12 @@ for (let i = 0; i < 5; i++) {
   const pos = getRandomGridPosition(blockPositions);
   blockPositions.push(pos);
   blocks.push(new BulletBlock(pos.x, pos.y));
+}
+// After adding BulletBlocks
+for (let i = 0; i < 10; i++) {
+  const pos = getRandomGridPosition(blockPositions);
+  blockPositions.push(pos);
+  blocks.push(new IndestructibleBlock(pos.x, pos.y));
 }
 
 export const state = {
@@ -79,9 +86,9 @@ export function updateState(state) {
         // Calculate target cell
         const tx = Math.round(p.x / size) * size + dir.dx * size;
         const ty = Math.round(p.y / size) * size + dir.dy * size;
-        // Check collision with blocks (only DestructibleBlock blocks movement)
+        // Check collision with blocks (DestructibleBlock and IndestructibleBlock block movement)
         const collision = state.blocks.some(b =>
-          b instanceof DestructibleBlock &&
+          (b instanceof DestructibleBlock || b instanceof IndestructibleBlock) &&
           tx < b.x + b.size && tx + size > b.x &&
           ty < b.y + b.size && ty + size > b.y
         );
@@ -168,6 +175,14 @@ export function updateState(state) {
           if (block.hp <= 0) {
             state.blocks.splice(j, 1);
           }
+          break;
+        }
+      } else if (block instanceof IndestructibleBlock) {
+        if (
+          bullet.x > block.x && bullet.x < block.x + block.size &&
+          bullet.y > block.y && bullet.y < block.y + block.size
+        ) {
+          state.bullets.splice(i, 1);
           break;
         }
       }
