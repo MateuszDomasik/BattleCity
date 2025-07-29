@@ -1,53 +1,220 @@
+import { state } from './state.js';
+import { LightBrownBlock } from './blocks/LightBrownBlock.js';
+
 export function renderUI(state) {
-  const ui = document.getElementById('ui');
-  if (!ui) return;
-  // Health bar (green rectangle with white border, classic style)
-  const healthPercent = state.player.health / state.player.maxHealth;
-  const barWidth = 200;
-  const barHeight = 20;
-  const healthBar = `
-    <div style="display:flex;flex-direction:column;align-items:center;width:${barWidth}px;">
-      <div style="position:relative;width:${barWidth}px;height:${barHeight}px;background:#222;border:2px solid white;border-radius:8px;overflow:hidden;">
-        <div style="position:absolute;left:0;top:0;height:100%;width:${Math.max(0, healthPercent * 100)}%;background:linear-gradient(90deg,#00ff00 60%,#66ff66 100%);transition:width 0.2s;"></div>
-        <div style="position:absolute;width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:16px;text-shadow:1px 1px 2px #000;">${state.player.health} / ${state.player.maxHealth}</div>
-      </div>
-    </div>
-  `;
-  // Bullets and wood
-  const stats = `
-    <div style='color:white;'>Bullets: ${state.player.bullets}</div>
-    <div style='color:saddlebrown;'>Wood: ${state.player.wood}</div>
-  `;
-  ui.innerHTML = healthBar + stats;
-  // Backpack
-  const backpackDiv = document.getElementById('backpack');
-  if (!backpackDiv) return;
-  backpackDiv.innerHTML = '';
-  for (let i = 0; i < state.backpack.length; i++) {
-    const slot = document.createElement('div');
-    slot.style.width = '48px';
-    slot.style.height = '48px';
-    slot.style.border = '2px solid #aaa';
-    slot.style.background = '#222';
-    slot.style.borderRadius = '8px';
-    slot.style.display = 'flex';
-    slot.style.justifyContent = 'center';
-    slot.style.alignItems = 'center';
-    slot.style.fontSize = '24px';
-    slot.style.color = '#888';
-    if (state.gameMode === 'placingBlock' && state.placingBlockIndex === i) {
-      slot.style.outline = '2px solid yellow';
-    }
-    slot.innerText = state.backpack[i] ? state.backpack[i] : '';
-    if (state.backpack[i]) {
-      slot.style.cursor = 'pointer';
-      slot.onclick = function() {
-        state.gameMode = 'placingBlock';
-        state.placingBlockIndex = i;
-        // Re-render to highlight
-        renderUI(state);
-      };
-    }
-    backpackDiv.appendChild(slot);
+  // Update health bar
+  const healthBar = document.querySelector('.health-fill');
+  const healthText = document.querySelector('.health-text');
+  if (healthBar && healthText) {
+    const healthPercent = (state.player.health / state.player.maxHealth) * 100;
+    healthBar.style.width = healthPercent + '%';
+    healthText.textContent = `${state.player.health}/${state.player.maxHealth}`;
   }
+
+  // Update bullet counter
+  const bulletCount = document.getElementById('bulletCount');
+  if (bulletCount) {
+    bulletCount.textContent = state.player.bullets;
+  }
+
+  // Update wood counter
+  const woodCount = document.getElementById('woodCount');
+  if (woodCount) {
+    woodCount.textContent = state.player.wood;
+  }
+
+  // Show edit mode indicator
+  const shopButton = document.getElementById('shopButton');
+  if (shopButton) {
+    if (state.gameMode === 'edit') {
+      shopButton.textContent = 'Edit Mode - Click map to place block';
+      shopButton.style.backgroundColor = '#e74c3c';
+    } else {
+      shopButton.textContent = 'Shop';
+      shopButton.style.backgroundColor = '#3498db';
+    }
+  }
+
+  // Render backpack
+  renderBackpack();
+}
+
+function renderBackpack() {
+  const backpack = document.getElementById('backpack');
+  if (!backpack) return;
+
+  const slots = backpack.querySelectorAll('.slot');
+  slots.forEach((slot, index) => {
+    // Clear the slot completely
+    slot.innerHTML = '';
+    slot.className = 'slot';
+    slot.style.backgroundColor = ''; // Reset background color
+    slot.title = ''; // Reset title
+    
+    const item = state.backpack[index];
+    if (item) {
+      slot.style.backgroundColor = item.color;
+      slot.title = item.name || 'Block';
+    }
+  });
+}
+
+// Shop functionality
+export function setupShopHandlers() {
+  const shopButton = document.getElementById('shopButton');
+  const shopModal = document.getElementById('shopModal');
+  const closeButton = shopModal.querySelector('.close');
+  const buyButtons = shopModal.querySelectorAll('.buy-button');
+
+  // Open shop
+  shopButton.addEventListener('click', () => {
+    shopModal.style.display = 'block';
+    state.shopOpen = true;
+    updateBuyButtons();
+  });
+
+  // Close shop
+  closeButton.addEventListener('click', () => {
+    shopModal.style.display = 'none';
+    state.shopOpen = false;
+  });
+
+  // Close shop when clicking outside
+  window.addEventListener('click', (event) => {
+    if (event.target === shopModal) {
+      shopModal.style.display = 'none';
+      state.shopOpen = false;
+    }
+  });
+
+  // Buy items
+  buyButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const itemType = button.dataset.item;
+      const cost = parseInt(button.dataset.cost);
+      
+      if (state.player.wood >= cost) {
+        // Deduct wood
+        state.player.wood -= cost;
+        
+        // Add item to backpack
+        addItemToBackpack(itemType);
+        
+        // Update UI
+        renderUI(state);
+        updateBuyButtons();
+      }
+    });
+  });
+}
+
+function updateBuyButtons() {
+  const buyButtons = document.querySelectorAll('.buy-button');
+  buyButtons.forEach(button => {
+    const cost = parseInt(button.dataset.cost);
+    if (state.player.wood >= cost) {
+      button.disabled = false;
+      button.textContent = 'Buy';
+    } else {
+      button.disabled = true;
+      button.textContent = 'Not enough wood';
+    }
+  });
+}
+
+function addItemToBackpack(itemType) {
+  // Find first empty slot
+  const emptyIndex = state.backpack.findIndex(item => item === null);
+  if (emptyIndex !== -1) {
+    let item;
+    switch (itemType) {
+      case 'lightBrownBlock':
+        item = {
+          type: 'lightBrownBlock',
+          name: 'Light Brown Block',
+          color: '#d4a574',
+          class: LightBrownBlock
+        };
+        break;
+      default:
+        return;
+    }
+    
+    state.backpack[emptyIndex] = item;
+    renderBackpack();
+  }
+}
+
+// Backpack click handlers
+export function setupBackpackHandlers() {
+  const slots = document.querySelectorAll('.slot');
+  
+  slots.forEach((slot, index) => {
+    slot.addEventListener('click', () => {
+      const item = state.backpack[index];
+      if (item) {
+        // Select item for placement
+        state.gameMode = 'edit';
+        state.placingBlockIndex = index;
+        
+        // Update visual selection
+        slots.forEach(s => s.classList.remove('selected'));
+        slot.classList.add('selected');
+        
+      }
+    });
+  });
+  
+  // Add map click handler for placing blocks
+  const canvas = document.getElementById('gameCanvas');
+  if (canvas) {
+    canvas.addEventListener('click', (event) => {
+      if (state.gameMode === 'edit' && state.placingBlockIndex !== null) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        // Convert to grid position
+        const gridX = Math.floor(x / 48) * 48;
+        const gridY = Math.floor(y / 48) * 48;
+        
+        // Check if position is empty (not occupied by any block)
+        const isOccupied = state.blocks.some(block => 
+          block.x === gridX && block.y === gridY
+        );
+        
+        if (!isOccupied) {
+          const selectedItem = state.backpack[state.placingBlockIndex];
+          if (selectedItem && selectedItem.class) {
+            // Create new block at the clicked position
+            const newBlock = new selectedItem.class(gridX, gridY);
+            state.blocks.push(newBlock);
+            
+            // Remove item from backpack
+            state.backpack[state.placingBlockIndex] = null;
+            
+            // Exit edit mode
+            state.gameMode = 'play';
+            state.placingBlockIndex = null;
+            
+            // Remove visual selection
+            slots.forEach(s => s.classList.remove('selected'));
+            
+            // Update UI
+            renderUI(state);
+            renderBackpack(); // Explicit call to update backpack display
+            
+          }
+        } else {
+          // console.log('Position occupied, cannot place block'); // Removed debugging
+        }
+      }
+    });
+  }
+}
+
+// Initialize UI handlers
+export function initializeUI() {
+  setupShopHandlers();
+  setupBackpackHandlers();
 } 

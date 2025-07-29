@@ -2,6 +2,9 @@ import { DestructibleBlock } from './blocks/DestructibleBlock.js';
 import { BulletBlock } from './blocks/BulletBlock.js';
 import { IndestructibleBlock } from './blocks/IndestructibleBlock.js';
 import { WaterBlock } from './blocks/WaterBlock.js';
+import { TreeBlock } from './blocks/TreeBlock.js';
+import { WoodBlock } from './blocks/WoodBlock.js';
+import { LightBrownBlock } from './blocks/LightBrownBlock.js';
 
 export function renderGame(state) {
   const canvas = document.getElementById('gameCanvas');
@@ -11,7 +14,7 @@ export function renderGame(state) {
 
   // Draw blocks
   for (const block of state.blocks) {
-    if (block instanceof DestructibleBlock || block instanceof BulletBlock || block instanceof IndestructibleBlock || block instanceof WaterBlock) {
+    if (block instanceof DestructibleBlock || block instanceof BulletBlock || block instanceof IndestructibleBlock || block instanceof WaterBlock || block instanceof TreeBlock || block instanceof WoodBlock || block instanceof LightBrownBlock) {
       block.render(ctx);
     } else {
       ctx.fillStyle = block.color || 'gray';

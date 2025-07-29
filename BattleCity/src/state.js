@@ -2,6 +2,9 @@ import { DestructibleBlock } from './blocks/DestructibleBlock.js';
 import { BulletBlock } from './blocks/BulletBlock.js';
 import { IndestructibleBlock } from './blocks/IndestructibleBlock.js';
 import { WaterBlock } from './blocks/WaterBlock.js';
+import { TreeBlock } from './blocks/TreeBlock.js';
+import { WoodBlock } from './blocks/WoodBlock.js';
+import { LightBrownBlock } from './blocks/LightBrownBlock.js';
 
 export const GRID_COLS = 30;
 export const GRID_ROWS = 15;
@@ -50,6 +53,13 @@ for (const pos of waterPositions) {
   blocks.push(new WaterBlock(pos.x, pos.y));
 }
 
+// Add TreeBlocks
+for (let i = 0; i < 8; i++) {
+  const pos = getRandomGridPosition(blockPositions);
+  blockPositions.push(pos);
+  blocks.push(new TreeBlock(pos.x, pos.y));
+}
+
 export const state = {
   player: {
     x: playerStart.x,
@@ -78,6 +88,7 @@ export const state = {
   placingBlockIndex: null,
   keysPressed: {},
   lastMoveTime: performance.now(),
+  shopOpen: false, // Track if shop is open
 };
 
 function isAlignedToGrid(val, size) {
@@ -104,9 +115,9 @@ export function updateState(state) {
         // Calculate target cell
         const tx = Math.round(p.x / size) * size + dir.dx * size;
         const ty = Math.round(p.y / size) * size + dir.dy * size;
-        // Check collision with blocks (DestructibleBlock and IndestructibleBlock block movement)
+        // Check collision with blocks (DestructibleBlock, IndestructibleBlock, and TreeBlock block movement)
         const collision = state.blocks.some(b =>
-          (b instanceof DestructibleBlock || b instanceof IndestructibleBlock) &&
+          (b instanceof DestructibleBlock || b instanceof IndestructibleBlock || b instanceof TreeBlock) &&
           tx < b.x + b.size && tx + size > b.x &&
           ty < b.y + b.size && ty + size > b.y
         );
@@ -136,6 +147,104 @@ export function updateState(state) {
     }
   }
 
+  // Shooting
+  if (p.shoot && p.bullets > 0 && state.gameMode === 'play') {
+    if (!p._shotThisFrame) {
+      // Bullet direction based on angle, adjusted for tank image rotation
+      const angle = p.angle - Math.PI / 2;
+      const speed = 12;
+      state.bullets.push({
+        x: p.x + p.size / 2,
+        y: p.y + p.size / 2,
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed,
+        size: 4, // Add size property for collision detection
+      });
+      p.bullets--;
+      p._shotThisFrame = true;
+    }
+  } else {
+    p._shotThisFrame = false;
+  }
+  // Update bullets
+  for (const bullet of state.bullets) {
+    bullet.x += bullet.dx;
+    bullet.y += bullet.dy;
+    // Ensure all bullets have size property
+    if (!bullet.size) {
+      bullet.size = 4;
+    }
+  }
+
+  // Bullet-block collision
+  for (let i = state.bullets.length - 1; i >= 0; i--) {
+    const bullet = state.bullets[i];
+    let bulletHit = false;
+
+    for (let j = state.blocks.length - 1; j >= 0; j--) {
+      const block = state.blocks[j];
+      
+      // Check collision with DestructibleBlock
+      if (block instanceof DestructibleBlock) {
+        if (
+          bullet.x < block.x + block.size &&
+          bullet.x + bullet.size > block.x &&
+          bullet.y < block.y + block.size &&
+          bullet.y + bullet.size > block.y
+        ) {
+          const destroyed = block.takeDamage ? block.takeDamage() : false;
+          if (destroyed) {
+            state.blocks.splice(j, 1);
+          }
+          state.bullets.splice(i, 1);
+          bulletHit = true;
+          break;
+        }
+      }
+      
+      // Check collision with TreeBlock
+      if (block instanceof TreeBlock) {
+        if (
+          bullet.x < block.x + block.size &&
+          bullet.x + bullet.size > block.x &&
+          bullet.y < block.y + block.size &&
+          bullet.y + bullet.size > block.y
+        ) {
+          const destroyed = block.takeDamage ? block.takeDamage() : false;
+          if (destroyed) {
+            // Replace tree with wood block
+            state.blocks.splice(j, 1);
+            state.blocks.push(new WoodBlock(block.x, block.y));
+          }
+          state.bullets.splice(i, 1);
+          bulletHit = true;
+          break;
+        }
+      }
+      
+      // Check collision with IndestructibleBlock
+      if (block instanceof IndestructibleBlock) {
+        if (
+          bullet.x < block.x + block.size &&
+          bullet.x + bullet.size > block.x &&
+          bullet.y < block.y + block.size &&
+          bullet.y + bullet.size > block.y
+        ) {
+          state.bullets.splice(i, 1);
+          bulletHit = true;
+          break;
+        }
+      }
+    }
+    
+    if (!bulletHit) {
+      // Remove bullets that go off screen
+      if (bullet.x < 0 || bullet.x > GRID_COLS * size || bullet.y < 0 || bullet.y > GRID_ROWS * size) {
+        state.bullets.splice(i, 1);
+      }
+    }
+  }
+
   // After player movement, check for BulletBlock collision (require full overlap)
   for (let i = state.blocks.length - 1; i >= 0; i--) {
     const block = state.blocks[i];
@@ -153,63 +262,21 @@ export function updateState(state) {
     }
   }
 
-  // Shooting
-  if (p.shoot && p.bullets > 0 && state.gameMode === 'play') {
-    if (!p._shotThisFrame) {
-      // Bullet direction based on angle, adjusted for tank image rotation
-      const angle = p.angle - Math.PI / 2;
-      const speed = 12;
-      state.bullets.push({
-        x: p.x + p.size / 2,
-        y: p.y + p.size / 2,
-        dx: Math.cos(angle) * speed,
-        dy: Math.sin(angle) * speed,
-      });
-      p.bullets--;
-      p._shotThisFrame = true;
-    }
-  } else {
-    p._shotThisFrame = false;
-  }
-  // Update bullets
-  for (const bullet of state.bullets) {
-    bullet.x += bullet.dx;
-    bullet.y += bullet.dy;
-  }
-
-  // Bullet-block collision and block destruction
-  for (let i = state.bullets.length - 1; i >= 0; i--) {
-    const bullet = state.bullets[i];
-    for (let j = state.blocks.length - 1; j >= 0; j--) {
-      const block = state.blocks[j];
-      if (block instanceof DestructibleBlock) {
-        // AABB collision
-        if (
-          bullet.x > block.x && bullet.x < block.x + block.size &&
-          bullet.y > block.y && bullet.y < block.y + block.size
-        ) {
-          block.hp--;
-          state.bullets.splice(i, 1);
-          if (block.hp <= 0) {
-            state.blocks.splice(j, 1);
-          }
-          break;
-        }
-      } else if (block instanceof IndestructibleBlock) {
-        if (
-          bullet.x > block.x && bullet.x < block.x + block.size &&
-          bullet.y > block.y && bullet.y < block.y + block.size
-        ) {
-          state.bullets.splice(i, 1);
-          break;
-        }
+  // After BulletBlock collision, add WoodBlock collision
+  for (let i = state.blocks.length - 1; i >= 0; i--) {
+    const block = state.blocks[i];
+    if (block instanceof WoodBlock) {
+      if (
+        p.x < block.x + block.size &&
+        p.x + p.size > block.x &&
+        p.y < block.y + block.size &&
+        p.y + p.size > block.y
+      ) {
+        p.wood += 1;
+        state.blocks.splice(i, 1);
       }
     }
   }
-  // Remove bullets out of bounds
-  state.bullets = state.bullets.filter(b =>
-    b.x >= 0 && b.x <= GRID_COLS * size && b.y >= 0 && b.y <= GRID_ROWS * size
-  );
 
   // After BulletBlock collision, add water collision
   for (let i = state.blocks.length - 1; i >= 0; i--) {

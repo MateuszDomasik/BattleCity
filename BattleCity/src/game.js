@@ -1,6 +1,7 @@
 import { state, updateState } from './state.js';
 import { renderGame } from './render.js';
-import { renderUI } from './ui.js';
+import { renderUI, initializeUI } from './ui.js';
+import { setupInputHandlers } from './input.js';
 
 let animationId = null;
 
@@ -15,7 +16,7 @@ export function startGameLoop() {
   animationId = requestAnimationFrame(loop);
 }
 
-export function stopGameLoop() {
-  if (animationId) cancelAnimationFrame(animationId);
-  animationId = null;
-} 
+// Initialize the game
+setupInputHandlers();
+initializeUI();
+startGameLoop(); 

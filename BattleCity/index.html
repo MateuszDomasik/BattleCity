@@ -3,31 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BattleCity - Player Tank</title>
+    <title>BattleCity</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="ui" style="width:100%;display:flex;justify-content:center;align-items:center;margin-bottom:10px;gap:40px;"></div>
-    <canvas id="gameCanvas" width="1440" height="720"></canvas>
-    <!-- Hidden tank sprite, 32x32 px, local file -->
-    <img id="tankSprite" src="assets/tank.jpg" width="32" height="32" style="display:none;" alt="Tank Sprite">
-    <div id="backpack" style="width:100%;display:flex;justify-content:center;align-items:center;margin-top:20px;gap:16px;"></div>
+    <div id="ui">
+        <div class="health-bar">
+            <div class="health-fill"></div>
+            <span class="health-text">10/10</span>
+        </div>
+        <div class="ammo-counter">
+            <span>Bullets: <span id="bulletCount">10</span></span>
+        </div>
+        <div class="wood-counter">
+            <span>Wood: <span id="woodCount">5</span></span>
+        </div>
+        <button id="shopButton" class="shop-button">Shop</button>
+    </div>
     
-    <!-- Import modular files -->
-    <script type="module">
-        import { startGameLoop } from './src/game.js';
-        import { setupInputHandlers } from './src/input.js';
-        import { renderUI } from './src/ui.js';
-        import { state } from './src/state.js';
-        
-        // Initialize the game
-        setupInputHandlers();
-        
-        // Start the game loop
-        startGameLoop();
-        
-        // Initial UI render
-        renderUI(state);
-    </script>
+    <canvas id="gameCanvas" width="1440" height="720"></canvas>
+    
+    <div id="backpack">
+        <h3>Backpack</h3>
+        <div class="backpack-slots">
+            <div class="slot" data-index="0"></div>
+            <div class="slot" data-index="1"></div>
+            <div class="slot" data-index="2"></div>
+            <div class="slot" data-index="3"></div>
+            <div class="slot" data-index="4"></div>
+        </div>
+    </div>
+
+    <!-- Shop Popup Modal -->
+    <div id="shopModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Shop</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="shop-item">
+                    <div class="item-block light-brown"></div>
+                    <div class="item-info">
+                        <h3>Light Brown Block</h3>
+                        <p>Cost: 2 Wood</p>
+                        <button class="buy-button" data-item="lightBrownBlock" data-cost="2">Buy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <img id="tankSprite" src="assets/tank.jpg" style="display: none;">
+    
+    <script type="module" src="src/game.js"></script>
 </body>
 </html>
