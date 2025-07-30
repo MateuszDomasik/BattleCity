@@ -7,6 +7,8 @@ import { WoodBlock } from './blocks/WoodBlock.js';
 import { LightBrownBlock } from './blocks/LightBrownBlock.js';
 import { SteelBlock } from './blocks/SteelBlock.js';
 import { GrayBlock } from './blocks/GrayBlock.js';
+import { StoneBlock } from './blocks/StoneBlock.js';
+import { StoneCollectibleBlock } from './blocks/StoneCollectibleBlock.js';
 import { ShootingTower } from './blocks/ShootingTower.js';
 
 export function renderGame(state) {
@@ -17,7 +19,7 @@ export function renderGame(state) {
 
   // Draw blocks
   for (const block of state.blocks) {
-    if (block instanceof DestructibleBlock || block instanceof BulletBlock || block instanceof IndestructibleBlock || block instanceof WaterBlock || block instanceof TreeBlock || block instanceof WoodBlock || block instanceof LightBrownBlock || block instanceof SteelBlock || block instanceof GrayBlock) {
+    if (block instanceof DestructibleBlock || block instanceof BulletBlock || block instanceof IndestructibleBlock || block instanceof WaterBlock || block instanceof TreeBlock || block instanceof WoodBlock || block instanceof LightBrownBlock || block instanceof SteelBlock || block instanceof GrayBlock || block instanceof StoneBlock || block instanceof StoneCollectibleBlock) {
       block.render(ctx);
     } else {
       ctx.fillStyle = block.color || 'gray';

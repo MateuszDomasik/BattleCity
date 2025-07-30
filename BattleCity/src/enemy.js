@@ -3,6 +3,7 @@ import { IndestructibleBlock } from './blocks/IndestructibleBlock.js';
 import { TreeBlock } from './blocks/TreeBlock.js';
 import { SteelBlock } from './blocks/SteelBlock.js';
 import { GrayBlock } from './blocks/GrayBlock.js';
+import { StoneBlock } from './blocks/StoneBlock.js';
 
 export class Enemy {
   constructor(x, y, size = 48) {
@@ -78,7 +79,8 @@ export class Enemy {
       (block instanceof DestructibleBlock || 
        block instanceof IndestructibleBlock || 
        block instanceof TreeBlock ||
-       block instanceof SteelBlock) &&
+       block instanceof SteelBlock ||
+       block instanceof StoneBlock) &&
       x < block.x + block.size &&
       x + this.size > block.x &&
       y < block.y + block.size &&
@@ -182,7 +184,8 @@ export class Enemy {
             (block instanceof DestructibleBlock || 
              block instanceof IndestructibleBlock || 
              block instanceof TreeBlock ||
-             block instanceof SteelBlock) &&
+             block instanceof SteelBlock ||
+             block instanceof StoneBlock) &&
             tx < block.x + block.size &&
             tx + this.size > block.x &&
             ty < block.y + block.size &&

@@ -30,6 +30,12 @@ export function renderUI(state) {
     steelCount.textContent = state.player.steel;
   }
 
+  // Update stones counter
+  const stonesCount = document.getElementById('stonesCount');
+  if (stonesCount) {
+    stonesCount.textContent = state.player.stones;
+  }
+
   // Update gold counter
   const goldCount = document.getElementById('goldCount');
   if (goldCount) {

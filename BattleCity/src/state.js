@@ -7,6 +7,8 @@ import { WoodBlock } from './blocks/WoodBlock.js';
 import { LightBrownBlock } from './blocks/LightBrownBlock.js';
 import { SteelBlock } from './blocks/SteelBlock.js';
 import { GrayBlock } from './blocks/GrayBlock.js';
+import { StoneBlock } from './blocks/StoneBlock.js';
+import { StoneCollectibleBlock } from './blocks/StoneCollectibleBlock.js';
 import { ShootingTower } from './blocks/ShootingTower.js';
 import { Enemy } from './enemy.js';
 
@@ -71,6 +73,13 @@ for (let i = 0; i < 6; i++) {
   blocks.push(new SteelBlock(pos.x, pos.y));
 }
 
+// Add StoneBlocks
+for (let i = 0; i < 10; i++) {
+  const pos = getRandomGridPosition(blockPositions);
+  blockPositions.push(pos);
+  blocks.push(new StoneBlock(pos.x, pos.y));
+}
+
 // Add enemies
 const enemies = [];
 for (let i = 0; i < 2; i++) {
@@ -95,6 +104,7 @@ export const state = {
     bullets: 10,
     wood: 5,
     steel: 0, // Add steel resource
+    stones: 0, // Add stones resource
     gold: 15, // Start with 15 gold to buy shooting tower
     speed: 96, // 2 cells per second (48*2)
     shoot: false,
@@ -144,9 +154,9 @@ export function updateState(state) {
         // Calculate target cell
         const tx = Math.round(p.x / size) * size + dir.dx * size;
         const ty = Math.round(p.y / size) * size + dir.dy * size;
-        // Check collision with blocks (DestructibleBlock, IndestructibleBlock, TreeBlock, and SteelBlock block movement)
+        // Check collision with blocks (DestructibleBlock, IndestructibleBlock, TreeBlock, SteelBlock, and StoneBlock block movement)
         const blockCollision = state.blocks.some(b =>
-          (b instanceof DestructibleBlock || b instanceof IndestructibleBlock || b instanceof TreeBlock || b instanceof SteelBlock) &&
+          (b instanceof DestructibleBlock || b instanceof IndestructibleBlock || b instanceof TreeBlock || b instanceof SteelBlock || b instanceof StoneBlock) &&
           tx < b.x + b.size && tx + size > b.x &&
           ty < b.y + b.size && ty + size > b.y
         );
@@ -239,7 +249,7 @@ export function updateState(state) {
           bullet.y < block.y + block.size &&
           bullet.y + bullet.size > block.y
         ) {
-          const destroyed = block.takeDamage ? block.takeDamage() : false;
+          const destroyed = block.takeDamage(1);
           if (destroyed) {
             state.blocks.splice(j, 1);
           }
@@ -257,11 +267,31 @@ export function updateState(state) {
           bullet.y < block.y + block.size &&
           bullet.y + bullet.size > block.y
         ) {
-          const destroyed = block.takeDamage ? block.takeDamage() : false;
+          const destroyed = block.takeDamage(1);
           if (destroyed) {
             // Replace tree with wood block
             state.blocks.splice(j, 1);
             state.blocks.push(new WoodBlock(block.x, block.y));
+          }
+          state.bullets.splice(i, 1);
+          bulletHit = true;
+          break;
+        }
+      }
+      
+      // Check collision with StoneBlock
+      if (block instanceof StoneBlock) {
+        if (
+          bullet.x < block.x + block.size &&
+          bullet.x + bullet.size > block.x &&
+          bullet.y < block.y + block.size &&
+          bullet.y + bullet.size > block.y
+        ) {
+          const destroyed = block.takeDamage(1);
+          if (destroyed) {
+            // Replace stone block with collectible stone
+            state.blocks.splice(j, 1);
+            state.blocks.push(new StoneCollectibleBlock(block.x, block.y));
           }
           state.bullets.splice(i, 1);
           bulletHit = true;
@@ -277,7 +307,7 @@ export function updateState(state) {
           bullet.y < block.y + block.size &&
           bullet.y + bullet.size > block.y
         ) {
-          const destroyed = block.takeDamage ? block.takeDamage() : false;
+          const destroyed = block.takeDamage(1);
           if (destroyed) {
             // Replace steel with gray block
             state.blocks.splice(j, 1);
@@ -558,6 +588,22 @@ export function updateState(state) {
         p.y + p.size > block.y
       ) {
         p.steel += 1; // Add steel resource
+        state.blocks.splice(i, 1);
+      }
+    }
+  }
+
+  // After GrayBlock collision, add StoneCollectibleBlock collision
+  for (let i = state.blocks.length - 1; i >= 0; i--) {
+    const block = state.blocks[i];
+    if (block instanceof StoneCollectibleBlock) {
+      if (
+        p.x < block.x + block.size &&
+        p.x + p.size > block.x &&
+        p.y < block.y + block.size &&
+        p.y + p.size > block.y
+      ) {
+        p.stones += 1; // Add stone resource
         state.blocks.splice(i, 1);
       }
     }
