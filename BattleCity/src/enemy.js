@@ -26,7 +26,7 @@ export class Enemy {
     this.moveDir = null;
   }
 
-  update(dt, player, blocks, enemies) {
+  update(dt, player, blocks, enemies, towers) {
     const now = performance.now();
     
     // Update shoot cooldown
@@ -44,7 +44,7 @@ export class Enemy {
     }
     
     // Move towards player using grid-based movement
-    this.moveTowardsPlayer(dt, blocks, enemies);
+    this.moveTowardsPlayer(dt, blocks, enemies, towers);
     
     // Shoot at player
     this.shootAtPlayer(player, now);
@@ -83,6 +83,16 @@ export class Enemy {
       x + this.size > block.x &&
       y < block.y + block.size &&
       y + this.size > block.y
+    );
+  }
+
+  // Check collision with shooting towers
+  checkTowerCollision(x, y, towers) {
+    return towers.some(tower => 
+      x < tower.x + tower.size &&
+      x + this.size > tower.x &&
+      y < tower.y + tower.size &&
+      y + this.size > tower.y
     );
   }
 
@@ -149,7 +159,7 @@ export class Enemy {
     return null; // No path available
   }
 
-  moveTowardsPlayer(dt, blocks, enemies) {
+  moveTowardsPlayer(dt, blocks, enemies, towers) {
     if (!this.targetPosition) return;
     
     // If not moving and aligned to grid, check for new move
@@ -167,7 +177,7 @@ export class Enemy {
           const tx = Math.round(this.x / this.size) * this.size + path.dx * this.size;
           const ty = Math.round(this.y / this.size) * this.size + path.dy * this.size;
           
-          // Check collision with blocks and other enemies
+          // Check collision with blocks, other enemies, and towers
           const blockCollision = blocks.some(block => 
             (block instanceof DestructibleBlock || 
              block instanceof IndestructibleBlock || 
@@ -180,8 +190,9 @@ export class Enemy {
           );
           
           const enemyCollision = this.checkEnemyCollision(tx, ty, enemies);
+          const towerCollision = this.checkTowerCollision(tx, ty, towers);
           
-          if (!blockCollision && !enemyCollision && tx >= 0 && ty >= 0 && tx < 30 * this.size && ty < 15 * this.size) {
+          if (!blockCollision && !enemyCollision && !towerCollision && tx >= 0 && ty >= 0 && tx < 30 * this.size && ty < 15 * this.size) {
             this.moving = true;
             this.moveTarget = { x: tx, y: ty };
             this.moveDir = path;

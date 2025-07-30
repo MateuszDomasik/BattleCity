@@ -7,6 +7,7 @@ import { WoodBlock } from './blocks/WoodBlock.js';
 import { LightBrownBlock } from './blocks/LightBrownBlock.js';
 import { SteelBlock } from './blocks/SteelBlock.js';
 import { GrayBlock } from './blocks/GrayBlock.js';
+import { ShootingTower } from './blocks/ShootingTower.js';
 
 export function renderGame(state) {
   const canvas = document.getElementById('gameCanvas');
@@ -27,6 +28,11 @@ export function renderGame(state) {
   // Draw enemies
   for (const enemy of state.enemies) {
     enemy.render(ctx);
+  }
+
+  // Draw shooting towers
+  for (const tower of state.shootingTowers) {
+    tower.render(ctx);
   }
 
   // Draw preview block with transparency

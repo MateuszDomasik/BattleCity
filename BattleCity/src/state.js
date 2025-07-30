@@ -7,6 +7,7 @@ import { WoodBlock } from './blocks/WoodBlock.js';
 import { LightBrownBlock } from './blocks/LightBrownBlock.js';
 import { SteelBlock } from './blocks/SteelBlock.js';
 import { GrayBlock } from './blocks/GrayBlock.js';
+import { ShootingTower } from './blocks/ShootingTower.js';
 import { Enemy } from './enemy.js';
 
 export const GRID_COLS = 30;
@@ -94,7 +95,7 @@ export const state = {
     bullets: 10,
     wood: 5,
     steel: 0, // Add steel resource
-    gold: 0, // Add gold resource
+    gold: 15, // Start with 15 gold to buy shooting tower
     speed: 96, // 2 cells per second (48*2)
     shoot: false,
     moving: false,
@@ -108,6 +109,7 @@ export const state = {
   blocks,
   enemies,
   bullets: [],
+  shootingTowers: [], // Add shooting towers array
   backpack: [null, null, null, null, null],
   gameMode: 'play', // or 'edit', 'shop', etc.
   placingBlockIndex: null,
@@ -143,11 +145,19 @@ export function updateState(state) {
         const tx = Math.round(p.x / size) * size + dir.dx * size;
         const ty = Math.round(p.y / size) * size + dir.dy * size;
         // Check collision with blocks (DestructibleBlock, IndestructibleBlock, TreeBlock, and SteelBlock block movement)
-        const collision = state.blocks.some(b =>
+        const blockCollision = state.blocks.some(b =>
           (b instanceof DestructibleBlock || b instanceof IndestructibleBlock || b instanceof TreeBlock || b instanceof SteelBlock) &&
           tx < b.x + b.size && tx + size > b.x &&
           ty < b.y + b.size && ty + size > b.y
         );
+        
+        // Check collision with shooting towers
+        const towerCollision = state.shootingTowers.some(tower =>
+          tx < tower.x + tower.size && tx + size > tower.x &&
+          ty < tower.y + tower.size && ty + size > tower.y
+        );
+        
+        const collision = blockCollision || towerCollision;
         if (!collision && tx >= 0 && ty >= 0 && tx < GRID_COLS * size && ty < GRID_ROWS * size) {
           p.moving = true;
           p.moveTarget = {x: tx, y: ty};
@@ -205,7 +215,12 @@ export function updateState(state) {
 
   // Update enemies
   for (const enemy of state.enemies) {
-    enemy.update(dt, state.player, state.blocks, state.enemies);
+    enemy.update(dt, state.player, state.blocks, state.enemies, state.shootingTowers);
+  }
+
+  // Update shooting towers
+  for (const tower of state.shootingTowers) {
+    tower.update(dt, state.enemies);
   }
 
   // Bullet-block collision
@@ -319,6 +334,34 @@ export function updateState(state) {
         state.bullets.splice(i, 1);
         bulletHit = true;
         break;
+      }
+    }
+  }
+
+  // Tower bullet collision with enemies
+  for (const tower of state.shootingTowers) {
+    for (let i = tower.bullets.length - 1; i >= 0; i--) {
+      const bullet = tower.bullets[i];
+      let bulletHit = false;
+
+      for (let j = state.enemies.length - 1; j >= 0; j--) {
+        const enemy = state.enemies[j];
+        if (
+          bullet.x < enemy.x + enemy.size &&
+          bullet.x + bullet.size > enemy.x &&
+          bullet.y < enemy.y + enemy.size &&
+          bullet.y + bullet.size > enemy.y
+        ) {
+          const destroyed = enemy.takeDamage();
+          if (destroyed) {
+            state.enemies.splice(j, 1);
+            // Reward player with gold for destroying enemy
+            p.gold += 5;
+          }
+          tower.bullets.splice(i, 1);
+          bulletHit = true;
+          break;
+        }
       }
     }
   }

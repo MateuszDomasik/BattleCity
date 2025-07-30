@@ -1,5 +1,6 @@
 import { state } from './state.js';
 import { LightBrownBlock } from './blocks/LightBrownBlock.js';
+import { ShootingTower } from './blocks/ShootingTower.js';
 
 export function renderUI(state) {
   // Update health bar
@@ -104,11 +105,18 @@ export function setupShopHandlers() {
     button.addEventListener('click', () => {
       const itemType = button.dataset.item;
       const cost = parseInt(button.dataset.cost);
+      const currency = button.dataset.currency || 'wood';
       
-      if (state.player.wood >= cost) {
-        // Deduct wood
+      let canAfford = false;
+      if (currency === 'wood' && state.player.wood >= cost) {
+        canAfford = true;
         state.player.wood -= cost;
-        
+      } else if (currency === 'gold' && state.player.gold >= cost) {
+        canAfford = true;
+        state.player.gold -= cost;
+      }
+      
+      if (canAfford) {
         // Add item to backpack
         addItemToBackpack(itemType);
         
@@ -124,12 +132,21 @@ function updateBuyButtons() {
   const buyButtons = document.querySelectorAll('.buy-button');
   buyButtons.forEach(button => {
     const cost = parseInt(button.dataset.cost);
-    if (state.player.wood >= cost) {
+    const currency = button.dataset.currency || 'wood';
+    
+    let canAfford = false;
+    if (currency === 'wood' && state.player.wood >= cost) {
+      canAfford = true;
+    } else if (currency === 'gold' && state.player.gold >= cost) {
+      canAfford = true;
+    }
+    
+    if (canAfford) {
       button.disabled = false;
       button.textContent = 'Buy';
     } else {
       button.disabled = true;
-      button.textContent = 'Not enough wood';
+      button.textContent = `Not enough ${currency}`;
     }
   });
 }
@@ -146,6 +163,14 @@ function addItemToBackpack(itemType) {
           name: 'Light Brown Block',
           color: '#d4a574',
           class: LightBrownBlock
+        };
+        break;
+      case 'shootingTower':
+        item = {
+          type: 'shootingTower',
+          name: 'Shooting Tower',
+          color: '#8B4513',
+          class: ShootingTower
         };
         break;
       default:
@@ -232,9 +257,16 @@ export function setupBackpackHandlers() {
         if (!isOccupied) {
           const selectedItem = state.backpack[state.placingBlockIndex];
           if (selectedItem && selectedItem.class) {
-            // Create new block at the clicked position
-            const newBlock = new selectedItem.class(gridX, gridY);
-            state.blocks.push(newBlock);
+            // Create new block or tower at the clicked position
+            const newItem = new selectedItem.class(gridX, gridY);
+            
+            if (selectedItem.type === 'shootingTower') {
+              // Add to shooting towers array
+              state.shootingTowers.push(newItem);
+            } else {
+              // Add to blocks array
+              state.blocks.push(newItem);
+            }
             
             // Remove item from backpack
             state.backpack[state.placingBlockIndex] = null;

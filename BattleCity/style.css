@@ -194,6 +194,31 @@ body {
     background-color: #d4a574;
 }
 
+.item-block.shooting-tower {
+    background-color: #8B4513;
+    position: relative;
+}
+
+.item-block.shooting-tower::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 20px;
+    width: 8px;
+    height: 40px;
+    background-color: #654321;
+}
+
+.item-block.shooting-tower::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 24px;
+    height: 24px;
+    background-color: #A0522D;
+}
+
 .item-info {
     flex: 1;
 }
