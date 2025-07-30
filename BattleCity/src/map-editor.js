@@ -6,6 +6,12 @@ import { StoneBlock } from './blocks/StoneBlock.js';
 import { WaterBlock } from './blocks/WaterBlock.js';
 import { BulletBlock } from './blocks/BulletBlock.js';
 import { ShootingTower } from './blocks/ShootingTower.js';
+import { FlowersBlock } from './blocks/FlowersBlock.js';
+import { Grass1Block } from './blocks/Grass1Block.js';
+import { Grass2Block } from './blocks/Grass2Block.js';
+import { GravelBlock } from './blocks/GravelBlock.js';
+import { GroundBlock } from './blocks/GroundBlock.js';
+import { SandBlock } from './blocks/SandBlock.js';
 
 class MapEditor {
     constructor() {
@@ -134,6 +140,18 @@ class MapEditor {
                 return new BulletBlock(x, y);
             case 'ShootingTower':
                 return new ShootingTower(x, y);
+            case 'FlowersBlock':
+                return new FlowersBlock(x, y);
+            case 'Grass1Block':
+                return new Grass1Block(x, y);
+            case 'Grass2Block':
+                return new Grass2Block(x, y);
+            case 'GravelBlock':
+                return new GravelBlock(x, y);
+            case 'GroundBlock':
+                return new GroundBlock(x, y);
+            case 'SandBlock':
+                return new SandBlock(x, y);
             default:
                 return null;
         }

@@ -144,6 +144,48 @@ body {
     background-color: #8B4513;
 }
 
+.block-preview.flowers {
+    background-color: #FF69B4;
+    background-image: url('../assets/flowers.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.block-preview.grass1 {
+    background-color: #90EE90;
+    background-image: url('../assets/grass.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.block-preview.grass2 {
+    background-color: #7CFC00;
+    background-image: url('../assets/grass2.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.block-preview.gravel {
+    background-color: #808080;
+    background-image: url('../assets/gravel.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.block-preview.ground {
+    background-color: #8B4513;
+    background-image: url('../assets/ground.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.block-preview.sand {
+    background-color: #F4A460;
+    background-image: url('../assets/sand.png');
+    background-size: cover;
+    background-position: center;
+}
+
 .block-preview.eraser {
     background-color: #e74c3c;
     color: white;

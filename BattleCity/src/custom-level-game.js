@@ -10,6 +10,12 @@ import { StoneBlock } from './blocks/StoneBlock.js';
 import { WaterBlock } from './blocks/WaterBlock.js';
 import { BulletBlock } from './blocks/BulletBlock.js';
 import { ShootingTower } from './blocks/ShootingTower.js';
+import { FlowersBlock } from './blocks/FlowersBlock.js';
+import { Grass1Block } from './blocks/Grass1Block.js';
+import { Grass2Block } from './blocks/Grass2Block.js';
+import { GravelBlock } from './blocks/GravelBlock.js';
+import { GroundBlock } from './blocks/GroundBlock.js';
+import { SandBlock } from './blocks/SandBlock.js';
 
 let animationId = null;
 
@@ -28,9 +34,10 @@ function loadCustomLevel() {
     return null;
 }
 
-// Create blocks from custom level data
-function createBlocksFromData(levelData) {
+// Create blocks and towers from custom level data
+function createBlocksAndTowersFromData(levelData) {
     const blocks = [];
+    const towers = [];
     
     if (levelData && levelData.blocks) {
         levelData.blocks.forEach(blockData => {
@@ -60,16 +67,35 @@ function createBlocksFromData(levelData) {
                     break;
                 case 'ShootingTower':
                     block = new ShootingTower(blockData.x, blockData.y);
+                    towers.push(block); // Add to towers array instead
+                    break;
+                case 'FlowersBlock':
+                    block = new FlowersBlock(blockData.x, blockData.y);
+                    break;
+                case 'Grass1Block':
+                    block = new Grass1Block(blockData.x, blockData.y);
+                    break;
+                case 'Grass2Block':
+                    block = new Grass2Block(blockData.x, blockData.y);
+                    break;
+                case 'GravelBlock':
+                    block = new GravelBlock(blockData.x, blockData.y);
+                    break;
+                case 'GroundBlock':
+                    block = new GroundBlock(blockData.x, blockData.y);
+                    break;
+                case 'SandBlock':
+                    block = new SandBlock(blockData.x, blockData.y);
                     break;
             }
             
-            if (block) {
+            if (block && blockData.type !== 'ShootingTower') {
                 blocks.push(block);
             }
         });
     }
     
-    return blocks;
+    return { blocks, towers };
 }
 
 // Initialize custom level game
@@ -82,16 +108,17 @@ function initializeCustomLevelGame() {
         return;
     }
     
-    // Create blocks from custom level data
-    const customBlocks = createBlocksFromData(customLevelData);
+    // Create blocks and towers from custom level data
+    const { blocks: customBlocks, towers: customTowers } = createBlocksAndTowersFromData(customLevelData);
     
-    // Update state with custom blocks
+    // Update state with custom blocks and towers
     state.blocks = customBlocks;
+    state.shootingTowers = customTowers;
     
     // Clear any existing custom level data to prevent conflicts
     localStorage.removeItem('battlecity-current-custom-level');
     
-    console.log(`Loaded custom level with ${customBlocks.length} blocks`);
+    console.log(`Loaded custom level with ${customBlocks.length} blocks and ${customTowers.length} towers`);
 }
 
 export function startCustomLevelGameLoop() {
