@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BattleCity - Map Editor</title>
+    <link rel="stylesheet" href="map-editor.css">
+</head>
+<body>
+    <div id="ui">
+        <div class="editor-header">
+            <h2>Map Editor</h2>
+            <div class="editor-controls">
+                <button id="saveButton" class="control-button">Save Map</button>
+                <button id="loadButton" class="control-button">Load Map</button>
+                <button id="clearButton" class="control-button">Clear Map</button>
+                <button id="menuButton" class="control-button">Back to Menu</button>
+            </div>
+        </div>
+        
+        <div class="block-palette">
+            <h3>Blocks</h3>
+            <div class="palette-grid">
+                <div class="palette-item" data-block="DestructibleBlock">
+                    <div class="block-preview destructible"></div>
+                    <span>Destructible</span>
+                </div>
+                <div class="palette-item" data-block="IndestructibleBlock">
+                    <div class="block-preview indestructible"></div>
+                    <span>Indestructible</span>
+                </div>
+                <div class="palette-item" data-block="TreeBlock">
+                    <div class="block-preview tree"></div>
+                    <span>Tree</span>
+                </div>
+                <div class="palette-item" data-block="SteelBlock">
+                    <div class="block-preview steel"></div>
+                    <span>Steel</span>
+                </div>
+                <div class="palette-item" data-block="StoneBlock">
+                    <div class="block-preview stone"></div>
+                    <span>Stone</span>
+                </div>
+                <div class="palette-item" data-block="WaterBlock">
+                    <div class="block-preview water"></div>
+                    <span>Water</span>
+                </div>
+                <div class="palette-item" data-block="BulletBlock">
+                    <div class="block-preview bullet"></div>
+                    <span>Bullet</span>
+                </div>
+                <div class="palette-item" data-block="ShootingTower">
+                    <div class="block-preview tower"></div>
+                    <span>Tower</span>
+                </div>
+                <div class="palette-item" data-block="eraser">
+                    <div class="block-preview eraser">×</div>
+                    <span>Eraser</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="editor-info">
+            <p>Selected: <span id="selectedBlock">None</span></p>
+            <p>Click on the map to place blocks</p>
+        </div>
+    </div>
+    
+    <canvas id="editorCanvas" width="1440" height="720"></canvas>
+    
+    <script type="module" src="src/map-editor.js"></script>
+</body>
+</html> 

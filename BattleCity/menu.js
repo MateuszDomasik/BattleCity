@@ -17,9 +17,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     mapEditorBtn.addEventListener('click', function() {
-        // For now, show a placeholder message
-        // In the future, this could navigate to a map editor
-        alert('Map Editor is coming soon! This feature will allow you to create custom maps.');
+        // Navigate to the map editor
+        window.location.href = 'map-editor.html';
     });
 
     // Add keyboard navigation

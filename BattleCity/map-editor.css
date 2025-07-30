@@ -1,0 +1,237 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #2c3e50;
+    color: white;
+    overflow: hidden;
+}
+
+#ui {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.editor-header {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: all;
+}
+
+.editor-header h2 {
+    color: #FFD700;
+    font-size: 1.5rem;
+}
+
+.editor-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.control-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.control-button:hover {
+    background-color: #2980b9;
+}
+
+.block-palette {
+    position: fixed;
+    top: 90px; /* Adjust to account for new canvas position */
+    right: 20px; /* Move to right side instead of left */
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 10px;
+    padding: 20px;
+    width: 200px;
+    pointer-events: all;
+    z-index: 1001; /* Ensure it's above other elements */
+}
+
+.block-palette h3 {
+    color: #FFD700;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+}
+
+.palette-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.palette-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.palette-item:hover {
+    background-color: rgba(52, 152, 219, 0.3);
+}
+
+.palette-item.selected {
+    border-color: #FFD700;
+    background-color: rgba(255, 215, 0, 0.2);
+}
+
+.block-preview {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #34495e;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.block-preview.destructible {
+    background-color: #8B4513;
+}
+
+.block-preview.indestructible {
+    background-color: #2c3e50;
+}
+
+.block-preview.tree {
+    background-color: #228B22;
+}
+
+.block-preview.steel {
+    background-color: #c0c0c0;
+}
+
+.block-preview.stone {
+    background-color: #404040;
+}
+
+.block-preview.water {
+    background-color: #4A90E2;
+}
+
+.block-preview.bullet {
+    background-color: #FFD700;
+    color: #000;
+}
+
+.block-preview.tower {
+    background-color: #8B4513;
+}
+
+.block-preview.eraser {
+    background-color: #e74c3c;
+    color: white;
+    font-size: 18px;
+}
+
+.palette-item span {
+    font-size: 0.8rem;
+    text-align: center;
+}
+
+.editor-info {
+    position: fixed;
+    bottom: 20px;
+    right: 20px; /* Move to right side to avoid game field */
+    background: rgba(0, 0, 0, 0.8);
+    padding: 15px;
+    border-radius: 10px;
+    pointer-events: all;
+    z-index: 1001; /* Ensure it's above other elements */
+    max-width: 200px; /* Prevent it from being too wide */
+}
+
+.editor-info p {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+#selectedBlock {
+    color: #FFD700;
+    font-weight: bold;
+}
+
+#editorCanvas {
+    border: 2px solid #34495e;
+    background-color: #333;
+    cursor: crosshair;
+    position: fixed;
+    top: 70px; /* Position below the header */
+    left: 0;
+}
+
+/* Grid overlay for better placement */
+.grid-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 48px 48px;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 1200px) {
+    .block-palette {
+        width: 180px;
+        padding: 15px;
+    }
+    
+    .palette-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .block-preview {
+        width: 28px;
+        height: 28px;
+    }
+}
+
+@media (max-width: 768px) {
+    .editor-header {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .editor-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .control-button {
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+} 
