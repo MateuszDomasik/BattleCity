@@ -68,12 +68,26 @@ function renderBackpack() {
     slot.innerHTML = '';
     slot.className = 'slot';
     slot.style.backgroundColor = ''; // Reset background color
+    slot.style.backgroundImage = ''; // Reset background image
     slot.title = ''; // Reset title
     
     const item = state.backpack[index];
     if (item) {
       slot.style.backgroundColor = item.color;
       slot.title = item.name || 'Block';
+      slot.style.border = '2px solid #34495e';
+      
+      // Add image for shooting tower
+      if (item.type === 'shootingTower') {
+        slot.style.backgroundImage = 'url(./assets/tower.png)';
+        slot.style.backgroundSize = 'cover';
+        slot.style.backgroundPosition = 'center';
+        slot.style.backgroundColor = 'transparent'; // Make background transparent to show image
+      }
+    } else {
+      // Style for empty slots
+      slot.style.backgroundColor = '#2c3e50';
+      slot.style.border = '2px dashed #34495e';
     }
   });
 }
