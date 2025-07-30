@@ -5,6 +5,7 @@ import { setupInputHandlers } from './input.js';
 import { DestructibleBlock } from './blocks/DestructibleBlock.js';
 import { IndestructibleBlock } from './blocks/IndestructibleBlock.js';
 import { TreeBlock } from './blocks/TreeBlock.js';
+import { WoodBlock } from './blocks/WoodBlock.js';
 import { SteelBlock } from './blocks/SteelBlock.js';
 import { StoneBlock } from './blocks/StoneBlock.js';
 import { WaterBlock } from './blocks/WaterBlock.js';
@@ -52,6 +53,9 @@ function createBlocksAndTowersFromData(levelData) {
                     break;
                 case 'TreeBlock':
                     block = new TreeBlock(blockData.x, blockData.y);
+                    break;
+                case 'WoodBlock':
+                    block = new WoodBlock(blockData.x, blockData.y);
                     break;
                 case 'SteelBlock':
                     block = new SteelBlock(blockData.x, blockData.y);

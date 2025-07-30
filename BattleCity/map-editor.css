@@ -121,6 +121,16 @@ body {
 
 .block-preview.tree {
     background-color: #228B22;
+    background-image: url('../assets/tree.png');
+    background-size: cover;
+    background-position: center;
+}
+
+.block-preview.wood {
+    background-color: #DEB887;
+    background-image: url('../assets/wood.png');
+    background-size: cover;
+    background-position: center;
 }
 
 .block-preview.steel {
@@ -133,11 +143,16 @@ body {
 
 .block-preview.water {
     background-color: #4A90E2;
+    background-image: url('../assets/water.png');
+    background-size: cover;
+    background-position: center;
 }
 
 .block-preview.bullet {
     background-color: #FFD700;
-    color: #000;
+    background-image: url('../assets/bullets.png');
+    background-size: cover;
+    background-position: center;
 }
 
 .block-preview.tower {

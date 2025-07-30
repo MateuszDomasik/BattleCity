@@ -1,6 +1,7 @@
 import { DestructibleBlock } from './blocks/DestructibleBlock.js';
 import { IndestructibleBlock } from './blocks/IndestructibleBlock.js';
 import { TreeBlock } from './blocks/TreeBlock.js';
+import { WoodBlock } from './blocks/WoodBlock.js';
 import { SteelBlock } from './blocks/SteelBlock.js';
 import { StoneBlock } from './blocks/StoneBlock.js';
 import { WaterBlock } from './blocks/WaterBlock.js';
@@ -22,6 +23,8 @@ class MapEditor {
         this.gridSize = 48;
         this.cols = 30;
         this.rows = 15;
+        this.currentEditingMap = null;
+        this.currentMapCreatedAt = null;
         
         this.initializeUI();
         this.setupEventListeners();
@@ -48,12 +51,16 @@ class MapEditor {
                 } else {
                     selectedBlockSpan.textContent = blockType;
                 }
+                
+                // Update editor info to show editing state
+                this.updateEditorInfo();
             });
         });
 
         // Setup control buttons
         document.getElementById('saveButton').addEventListener('click', () => this.saveToLocalStorage());
         document.getElementById('downloadButton').addEventListener('click', () => this.saveMap());
+        document.getElementById('loadFromLibraryButton').addEventListener('click', () => this.loadFromLibrary());
         document.getElementById('loadButton').addEventListener('click', () => this.loadMap());
         document.getElementById('clearButton').addEventListener('click', () => this.clearMap());
         document.getElementById('menuButton').addEventListener('click', () => {
@@ -130,6 +137,8 @@ class MapEditor {
                 return new IndestructibleBlock(x, y);
             case 'TreeBlock':
                 return new TreeBlock(x, y);
+            case 'WoodBlock':
+                return new WoodBlock(x, y);
             case 'SteelBlock':
                 return new SteelBlock(x, y);
             case 'StoneBlock':
@@ -197,39 +206,66 @@ class MapEditor {
     }
 
     saveToLocalStorage() {
-        const mapName = prompt('Enter a name for your map:');
-        if (!mapName || mapName.trim() === '') {
-            alert('Please enter a valid map name');
-            return;
+        // Check if we're editing an existing map
+        const currentMapName = this.currentEditingMap;
+        
+        let mapName;
+        if (currentMapName) {
+            // We're editing an existing map
+            mapName = currentMapName;
+        } else {
+            // We're creating a new map
+            mapName = prompt('Enter a name for your map:');
+            if (!mapName || mapName.trim() === '') {
+                alert('Please enter a valid map name');
+                return;
+            }
+            mapName = mapName.trim();
         }
 
         const mapData = {
-            name: mapName.trim(),
+            name: mapName,
             blocks: this.blocks.map(block => ({
                 type: block.constructor.name,
                 x: block.x,
                 y: block.y
             })),
-            createdAt: new Date().toISOString()
+            createdAt: currentMapName ? this.currentMapCreatedAt : new Date().toISOString(),
+            lastModified: new Date().toISOString()
         };
 
         // Get existing maps from localStorage
         const existingMaps = JSON.parse(localStorage.getItem('battlecity_maps') || '[]');
         
-        // Check if map with this name already exists
-        const existingIndex = existingMaps.findIndex(map => map.name === mapName.trim());
-        if (existingIndex !== -1) {
-            if (!confirm(`A map named "${mapName}" already exists. Do you want to overwrite it?`)) {
-                return;
+        // Check if map with this name already exists (for new maps)
+        if (!currentMapName) {
+            const existingIndex = existingMaps.findIndex(map => map.name === mapName);
+            if (existingIndex !== -1) {
+                if (!confirm(`A map named "${mapName}" already exists. Do you want to overwrite it?`)) {
+                    return;
+                }
+                existingMaps[existingIndex] = mapData;
+            } else {
+                existingMaps.push(mapData);
             }
-            existingMaps[existingIndex] = mapData;
         } else {
-            existingMaps.push(mapData);
+            // Update existing map
+            const existingIndex = existingMaps.findIndex(map => map.name === currentMapName);
+            if (existingIndex !== -1) {
+                existingMaps[existingIndex] = mapData;
+            } else {
+                existingMaps.push(mapData);
+            }
         }
 
         // Save to localStorage
         localStorage.setItem('battlecity_maps', JSON.stringify(existingMaps));
-        alert(`Map "${mapName}" saved successfully!`);
+        
+        if (currentMapName) {
+            alert(`Map "${mapName}" updated successfully!`);
+        } else {
+            alert(`Map "${mapName}" saved successfully!`);
+        }
     }
 
     saveMap() {
@@ -248,6 +284,185 @@ class MapEditor {
         link.href = URL.createObjectURL(dataBlob);
         link.download = 'battlecity-map.json';
         link.click();
+    }
+
+    loadFromLibrary() {
+        // Get saved maps from localStorage
+        const savedMaps = JSON.parse(localStorage.getItem('battlecity_maps') || '[]');
+        
+        if (savedMaps.length === 0) {
+            alert('No saved maps found in library. Create and save a map first.');
+            return;
+        }
+        
+        // Create a modal to select a map
+        this.showMapSelectionModal(savedMaps);
+    }
+
+    showMapSelectionModal(maps) {
+        // Create modal overlay
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        `;
+        
+        // Create modal content
+        const modalContent = document.createElement('div');
+        modalContent.style.cssText = `
+            background: #2c3e50;
+            border: 2px solid #FFD700;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 500px;
+            max-height: 400px;
+            overflow-y: auto;
+            color: white;
+        `;
+        
+        // Create title
+        const title = document.createElement('h3');
+        title.textContent = 'Select a Map to Edit';
+        title.style.cssText = `
+            color: #FFD700;
+            margin-bottom: 20px;
+            text-align: center;
+        `;
+        
+        // Create map list
+        const mapList = document.createElement('div');
+        mapList.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        `;
+        
+        maps.forEach((map, index) => {
+            const mapItem = document.createElement('div');
+            mapItem.style.cssText = `
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 10px;
+                background: rgba(52, 152, 219, 0.2);
+                border: 1px solid #3498db;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background-color 0.3s ease;
+            `;
+            
+            mapItem.onmouseenter = () => {
+                mapItem.style.backgroundColor = 'rgba(52, 152, 219, 0.4)';
+            };
+            
+            mapItem.onmouseleave = () => {
+                mapItem.style.backgroundColor = 'rgba(52, 152, 219, 0.2)';
+            };
+            
+            const mapInfo = document.createElement('div');
+            mapInfo.innerHTML = `
+                <div style="font-weight: bold; color: #FFD700;">${map.name}</div>
+                <div style="font-size: 0.9em; color: #bdc3c7;">
+                    Blocks: ${map.blocks ? map.blocks.length : 0} | 
+                    Created: ${new Date(map.createdAt).toLocaleDateString()}
+                </div>
+            `;
+            
+            const loadButton = document.createElement('button');
+            loadButton.textContent = 'Load';
+            loadButton.style.cssText = `
+                background: #27ae60;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: bold;
+            `;
+            
+            loadButton.onclick = (e) => {
+                e.stopPropagation();
+                this.loadMapFromLibrary(map);
+                document.body.removeChild(modal);
+            };
+            
+            mapItem.appendChild(mapInfo);
+            mapItem.appendChild(loadButton);
+            mapList.appendChild(mapItem);
+        });
+        
+        // Create close button
+        const closeButton = document.createElement('button');
+        closeButton.textContent = 'Cancel';
+        closeButton.style.cssText = `
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            width: 100%;
+        `;
+        
+        closeButton.onclick = () => {
+            document.body.removeChild(modal);
+        };
+        
+        modalContent.appendChild(title);
+        modalContent.appendChild(mapList);
+        modalContent.appendChild(closeButton);
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+    }
+
+    loadMapFromLibrary(mapData) {
+        // Clear current map
+        this.blocks = [];
+        
+        // Set editing state
+        this.currentEditingMap = mapData.name;
+        this.currentMapCreatedAt = mapData.createdAt;
+        
+        // Load blocks from the selected map
+        if (mapData.blocks) {
+            mapData.blocks.forEach(blockData => {
+                const block = this.createBlock(blockData.type, blockData.x, blockData.y);
+                if (block) {
+                    this.blocks.push(block);
+                }
+            });
+        }
+        
+        // Render the loaded map
+        this.render();
+        this.updateEditorInfo();
+        
+        // Show success message
+        alert(`Map "${mapData.name}" loaded successfully! You can now edit it.`);
+    }
+
+    updateEditorInfo() {
+        const editorInfo = document.querySelector('.editor-info');
+        if (editorInfo) {
+            const infoText = editorInfo.querySelector('p:last-child');
+            if (infoText) {
+                if (this.currentEditingMap) {
+                    infoText.textContent = `Editing: ${this.currentEditingMap} | Click on the map to place blocks`;
+                } else {
+                    infoText.textContent = 'Click on the map to place blocks';
+                }
+            }
+        }
     }
 
     loadMap() {
@@ -290,6 +505,8 @@ class MapEditor {
     clearMap() {
         if (confirm('Are you sure you want to clear the entire map?')) {
             this.blocks = [];
+            this.currentEditingMap = null;
+            this.currentMapCreatedAt = null;
             this.render();
         }
     }
