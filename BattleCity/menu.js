@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Get menu buttons
     const singleplayerBtn = document.getElementById('singleplayerBtn');
+    const chooseLevelBtn = document.getElementById('chooseLevelBtn');
     const multiplayerBtn = document.getElementById('multiplayerBtn');
     const mapEditorBtn = document.getElementById('mapEditorBtn');
 
@@ -8,6 +9,11 @@ document.addEventListener('DOMContentLoaded', function() {
     singleplayerBtn.addEventListener('click', function() {
         // Navigate to the main game
         window.location.href = 'index.html';
+    });
+
+    chooseLevelBtn.addEventListener('click', function() {
+        // Navigate to the level selection page
+        window.location.href = 'choose-level.html';
     });
 
     multiplayerBtn.addEventListener('click', function() {
@@ -30,10 +36,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
             case '2':
             case 'Digit2':
-                multiplayerBtn.click();
+                chooseLevelBtn.click();
                 break;
             case '3':
             case 'Digit3':
+                multiplayerBtn.click();
+                break;
+            case '4':
+            case 'Digit4':
                 mapEditorBtn.click();
                 break;
             case 'Enter':

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BattleCity - Custom Level</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="ui">
+        <div class="health-bar">
+            <div class="health-fill"></div>
+            <span class="health-text">10/10</span>
+        </div>
+        <div class="ammo-counter">
+            <span>Bullets: <span id="bulletCount">10</span></span>
+        </div>
+        <div class="wood-counter">
+            <span>Wood: <span id="woodCount">5</span></span>
+        </div>
+        <div class="steel-counter">
+            <span>Steel: <span id="steelCount">0</span></span>
+        </div>
+        <div class="stones-counter">
+            <span>Stones: <span id="stonesCount">0</span></span>
+        </div>
+        <div class="gold-counter">
+            <span>Gold: <span id="goldCount">0</span></span>
+        </div>
+        <button id="shopButton" class="shop-button">Shop</button>
+        <button id="menuButton" class="menu-button">Menu</button>
+    </div>
+    
+    <canvas id="gameCanvas" width="1440" height="720"></canvas>
+    
+    <div id="backpack">
+        <h3>Backpack</h3>
+        <div class="backpack-slots">
+            <div class="slot" data-index="0"></div>
+            <div class="slot" data-index="1"></div>
+            <div class="slot" data-index="2"></div>
+            <div class="slot" data-index="3"></div>
+            <div class="slot" data-index="4"></div>
+        </div>
+    </div>
+
+    <!-- Shop Popup Modal -->
+    <div id="shopModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Shop</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="shop-item">
+                    <div class="item-block light-brown"></div>
+                    <div class="item-info">
+                        <h3>Light Brown Block</h3>
+                        <p>Cost: 2 Wood</p>
+                        <button class="buy-button" data-item="lightBrownBlock" data-cost="2">Buy</button>
+                    </div>
+                </div>
+                <div class="shop-item">
+                    <div class="item-block shooting-tower"></div>
+                    <div class="item-info">
+                        <h3>Shooting Tower</h3>
+                        <p>Cost: 5 Gold</p>
+                        <button class="buy-button" data-item="shootingTower" data-cost="5" data-currency="gold">Buy</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <img id="tankSprite" src="assets/tank.jpg" style="display: none;">
+    
+    <script type="module" src="src/custom-level-game.js"></script>
+</body>
+</html> 

@@ -46,7 +46,8 @@ class MapEditor {
         });
 
         // Setup control buttons
-        document.getElementById('saveButton').addEventListener('click', () => this.saveMap());
+        document.getElementById('saveButton').addEventListener('click', () => this.saveToLocalStorage());
+        document.getElementById('downloadButton').addEventListener('click', () => this.saveMap());
         document.getElementById('loadButton').addEventListener('click', () => this.loadMap());
         document.getElementById('clearButton').addEventListener('click', () => this.clearMap());
         document.getElementById('menuButton').addEventListener('click', () => {
@@ -175,6 +176,42 @@ class MapEditor {
             this.ctx.lineTo(this.cols * this.gridSize, y);
             this.ctx.stroke();
         }
+    }
+
+    saveToLocalStorage() {
+        const mapName = prompt('Enter a name for your map:');
+        if (!mapName || mapName.trim() === '') {
+            alert('Please enter a valid map name');
+            return;
+        }
+
+        const mapData = {
+            name: mapName.trim(),
+            blocks: this.blocks.map(block => ({
+                type: block.constructor.name,
+                x: block.x,
+                y: block.y
+            })),
+            createdAt: new Date().toISOString()
+        };
+
+        // Get existing maps from localStorage
+        const existingMaps = JSON.parse(localStorage.getItem('battlecity_maps') || '[]');
+        
+        // Check if map with this name already exists
+        const existingIndex = existingMaps.findIndex(map => map.name === mapName.trim());
+        if (existingIndex !== -1) {
+            if (!confirm(`A map named "${mapName}" already exists. Do you want to overwrite it?`)) {
+                return;
+            }
+            existingMaps[existingIndex] = mapData;
+        } else {
+            existingMaps.push(mapData);
+        }
+
+        // Save to localStorage
+        localStorage.setItem('battlecity_maps', JSON.stringify(existingMaps));
+        alert(`Map "${mapName}" saved successfully!`);
     }
 
     saveMap() {

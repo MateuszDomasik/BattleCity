@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BattleCity - Choose Level</title>
+    <link rel="stylesheet" href="choose-level.css">
+</head>
+<body>
+    <div class="level-selector">
+        <div class="header">
+            <h1>Choose Level</h1>
+            <button id="backButton" class="back-button">← Back to Menu</button>
+        </div>
+        
+        <div class="level-controls">
+            <button id="uploadButton" class="control-button">Upload Level</button>
+            <button id="refreshButton" class="control-button">Refresh Levels</button>
+        </div>
+        
+        <div class="levels-container">
+            <div class="default-levels">
+                <h2>Default Levels</h2>
+                <div class="level-grid">
+                    <div class="level-item" data-level="default">
+                        <div class="level-preview">
+                            <div class="level-name">Classic BattleCity</div>
+                            <div class="level-description">Original game with random blocks</div>
+                        </div>
+                        <button class="play-button">Play</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="custom-levels">
+                <h2>Custom Levels</h2>
+                <div id="customLevelsGrid" class="level-grid">
+                    <div class="no-levels-message">
+                        <p>No custom levels found</p>
+                        <p>Create levels in the Map Editor and they will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="choose-level.js"></script>
+</body>
+</html> 
