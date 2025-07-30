@@ -301,4 +301,16 @@ export function setupBackpackHandlers() {
 export function initializeUI() {
   setupShopHandlers();
   setupBackpackHandlers();
+  setupMenuHandlers();
+}
+
+// Menu functionality
+function setupMenuHandlers() {
+  const menuButton = document.getElementById('menuButton');
+  if (menuButton) {
+    menuButton.addEventListener('click', () => {
+      // Navigate back to menu
+      window.location.href = 'menu.html';
+    });
+  }
 } 
