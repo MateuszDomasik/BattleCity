@@ -25,6 +25,8 @@ export class Enemy {
     this.moving = false;
     this.moveTarget = null;
     this.moveDir = null;
+    this.image = new Image();
+    this.image.src = '../../assets/enemy3.png';
   }
 
   update(dt, player, blocks, enemies, towers) {
@@ -278,13 +280,14 @@ export class Enemy {
     ctx.translate(this.x + this.size / 2, this.y + this.size / 2);
     ctx.rotate(this.angle);
     
-    // Draw red tank
+    // Draw background color first
     ctx.fillStyle = this.color;
     ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
     
-    // Draw tank details
-    ctx.fillStyle = 'darkred';
-    ctx.fillRect(-this.size / 4, -this.size / 2, this.size / 2, this.size / 4);
+    // Draw enemy image if loaded
+    if (this.image.complete) {
+      ctx.drawImage(this.image, -this.size / 2, -this.size / 2, this.size, this.size);
+    }
     
     ctx.restore();
     

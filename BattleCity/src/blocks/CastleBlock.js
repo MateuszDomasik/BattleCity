@@ -10,6 +10,8 @@ export class CastleBlock {
         this.maxHealth = 30;
         this.image = new Image();
         this.image.src = '../../assets/castle.png';
+        this.spawnTimer = 0;
+        this.spawnInterval = 30000; // 30 seconds in milliseconds
     }
 
     draw(ctx) {
@@ -53,5 +55,20 @@ export class CastleBlock {
     takeDamage(damage = 1) {
         this.health -= damage;
         return this.health <= 0;
+    }
+
+    update(dt, enemies) {
+        this.spawnTimer += dt * 1000; // Convert to milliseconds
+        if (this.spawnTimer >= this.spawnInterval) {
+            this.spawnTimer = 0;
+            return this.spawnEnemy();
+        }
+        return null;
+    }
+
+    spawnEnemy() {
+        // Spawn enemy at castle position
+        // We'll handle the Enemy import in the state update
+        return { x: this.x + this.size/2, y: this.y + this.size/2 };
     }
 } 

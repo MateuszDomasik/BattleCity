@@ -11,6 +11,8 @@ export class ShootingTower {
     this.lastShootTime = 0;
     this.bullets = [];
     this.range = 240; // 5 cells range
+    this.image = new Image();
+    this.image.src = '../../assets/tower.png';
   }
 
   update(dt, enemies) {
@@ -76,22 +78,12 @@ export class ShootingTower {
   draw(ctx) {
     // Draw tower base
     ctx.fillStyle = this.color;
-    ctx.fillRect(this.x + 8, this.y + 8, this.size - 16, this.size - 16);
+    ctx.fillRect(this.x, this.y, this.size, this.size);
     
-    // Draw tower top (gun barrel)
-    ctx.fillStyle = '#654321';
-    ctx.fillRect(this.x + 20, this.y + 4, 8, 40);
-    
-    // Draw tower details
-    ctx.fillStyle = '#A0522D';
-    ctx.fillRect(this.x + 12, this.y + 12, 24, 24);
-    
-    // Draw range indicator (for debugging, can be removed)
-    // ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
-    // ctx.lineWidth = 1;
-    // ctx.beginPath();
-    // ctx.arc(this.x + this.size / 2, this.y + this.size / 2, this.range, 0, Math.PI * 2);
-    // ctx.stroke();
+    // Draw tower image if loaded
+    if (this.image.complete) {
+      ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
+    }
   }
 
   render(ctx) {

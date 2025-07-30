@@ -117,6 +117,9 @@ body {
 
 .block-preview.destructible {
     background-color: #8B4513;
+    background-image: url('../assets/block.png');
+    background-size: cover;
+    background-position: center;
 }
 
 .block-preview.indestructible {
@@ -142,10 +145,16 @@ body {
 
 .block-preview.steel {
     background-color: #c0c0c0;
+    background-image: url('../assets/iron.png');
+    background-size: cover;
+    background-position: center;
 }
 
 .block-preview.stone {
     background-color: #404040;
+    background-image: url('../assets/rock.png');
+    background-size: cover;
+    background-position: center;
 }
 
 .block-preview.water {
@@ -164,6 +173,9 @@ body {
 
 .block-preview.tower {
     background-color: #8B4513;
+    background-image: url('../assets/tower.png');
+    background-size: cover;
+    background-position: center;
 }
 
 .block-preview.castle {

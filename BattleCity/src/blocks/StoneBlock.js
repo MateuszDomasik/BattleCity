@@ -8,6 +8,8 @@ export class StoneBlock {
     this.color = '#404040'; // Dark gray color
     this.health = 1;
     this.maxHealth = 1;
+    this.image = new Image();
+    this.image.src = '../../assets/rock.png';
   }
 
   draw(ctx) {
@@ -15,25 +17,15 @@ export class StoneBlock {
     ctx.fillStyle = this.color;
     ctx.fillRect(this.x, this.y, this.size, this.size);
     
-    // Add stone texture with darker lines
-    ctx.strokeStyle = '#2a2a2a';
-    ctx.lineWidth = 1;
-    
-    // Draw some stone texture lines
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath();
-      ctx.moveTo(this.x + i * 16, this.y);
-      ctx.lineTo(this.x + i * 16, this.y + this.size);
-      ctx.stroke();
+    // Draw rock image if loaded
+    if (this.image.complete) {
+      ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
     }
-    
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath();
-      ctx.moveTo(this.x, this.y + i * 16);
-      ctx.lineTo(this.x + this.size, this.y + i * 16);
-      ctx.stroke();
-    }
+  }
 
+  render(ctx) {
+    this.draw(ctx);
+    
     // Draw health bar in center of block
     const barWidth = this.size * 0.8;
     const barHeight = 8;

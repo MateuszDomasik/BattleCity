@@ -3,9 +3,13 @@ export class DestructibleBlock {
     this.x = x;
     this.y = y;
     this.size = size;
+    this.type = 'destructible';
+    this.destructible = true;
     this.hp = hp;
     this.maxHp = maxHp;
     this.color = 'gray';
+    this.image = new Image();
+    this.image.src = '../../assets/block.png';
   }
 
   takeDamage() {
@@ -13,10 +17,20 @@ export class DestructibleBlock {
     return this.hp <= 0;
   }
 
-  render(ctx) {
+  draw(ctx) {
     // Draw block
     ctx.fillStyle = this.color;
     ctx.fillRect(this.x, this.y, this.size, this.size);
+    
+    // Draw block image if loaded
+    if (this.image.complete) {
+      ctx.drawImage(this.image, this.x, this.y, this.size, this.size);
+    }
+  }
+
+  render(ctx) {
+    this.draw(ctx);
+    
     // Draw health bar (classic style)
     const barWidth = this.size * 0.8;
     const barHeight = 8;
