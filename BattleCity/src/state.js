@@ -142,9 +142,9 @@ export function updateState(state) {
         // Calculate target cell
         const tx = Math.round(p.x / size) * size + dir.dx * size;
         const ty = Math.round(p.y / size) * size + dir.dy * size;
-        // Check collision with blocks (DestructibleBlock, IndestructibleBlock, and TreeBlock block movement)
+        // Check collision with blocks (DestructibleBlock, IndestructibleBlock, TreeBlock, and SteelBlock block movement)
         const collision = state.blocks.some(b =>
-          (b instanceof DestructibleBlock || b instanceof IndestructibleBlock || b instanceof TreeBlock) &&
+          (b instanceof DestructibleBlock || b instanceof IndestructibleBlock || b instanceof TreeBlock || b instanceof SteelBlock) &&
           tx < b.x + b.size && tx + size > b.x &&
           ty < b.y + b.size && ty + size > b.y
         );
@@ -205,7 +205,7 @@ export function updateState(state) {
 
   // Update enemies
   for (const enemy of state.enemies) {
-    enemy.update(dt, state.player, state.blocks);
+    enemy.update(dt, state.player, state.blocks, state.enemies);
   }
 
   // Bullet-block collision
@@ -341,6 +341,41 @@ export function updateState(state) {
         
         // Remove enemy bullet
         enemy.bullets.splice(i, 1);
+      }
+    }
+  }
+
+  // Enemy-player collision detection
+  for (let i = state.enemies.length - 1; i >= 0; i--) {
+    const enemy = state.enemies[i];
+    if (
+      enemy.x < p.x + p.size &&
+      enemy.x + enemy.size > p.x &&
+      enemy.y < p.y + p.size &&
+      enemy.y + enemy.size > p.y
+    ) {
+      // Damage player on collision
+      p.health = Math.max(0, p.health - 2);
+      p._flickering = true;
+      p._flickerStartTime = performance.now();
+      setTimeout(() => { p._flickering = false; }, 1000); // 1 second flickering
+      
+      // Push enemy away from player to prevent continuous collision
+      const dx = enemy.x - p.x;
+      const dy = enemy.y - p.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance > 0) {
+        const pushDistance = 48; // Push by one cell
+        const pushX = (dx / distance) * pushDistance;
+        const pushY = (dy / distance) * pushDistance;
+        
+        // Ensure enemy stays within bounds
+        const newX = Math.max(0, Math.min(GRID_COLS * p.size - enemy.size, enemy.x + pushX));
+        const newY = Math.max(0, Math.min(GRID_ROWS * p.size - enemy.size, enemy.y + pushY));
+        
+        enemy.x = newX;
+        enemy.y = newY;
       }
     }
   }

@@ -2,6 +2,7 @@ import { DestructibleBlock } from './blocks/DestructibleBlock.js';
 import { IndestructibleBlock } from './blocks/IndestructibleBlock.js';
 import { TreeBlock } from './blocks/TreeBlock.js';
 import { SteelBlock } from './blocks/SteelBlock.js';
+import { GrayBlock } from './blocks/GrayBlock.js';
 
 export class Enemy {
   constructor(x, y, size = 48) {
@@ -25,7 +26,7 @@ export class Enemy {
     this.moveDir = null;
   }
 
-  update(dt, player, blocks) {
+  update(dt, player, blocks, enemies) {
     const now = performance.now();
     
     // Update shoot cooldown
@@ -43,7 +44,7 @@ export class Enemy {
     }
     
     // Move towards player using grid-based movement
-    this.moveTowardsPlayer(dt, blocks);
+    this.moveTowardsPlayer(dt, blocks, enemies);
     
     // Shoot at player
     this.shootAtPlayer(player, now);
@@ -82,6 +83,17 @@ export class Enemy {
       x + this.size > block.x &&
       y < block.y + block.size &&
       y + this.size > block.y
+    );
+  }
+
+  // Check collision with other enemies
+  checkEnemyCollision(x, y, enemies) {
+    return enemies.some(enemy => 
+      enemy !== this && // Don't check collision with self
+      x < enemy.x + enemy.size &&
+      x + this.size > enemy.x &&
+      y < enemy.y + enemy.size &&
+      y + this.size > enemy.y
     );
   }
 
@@ -137,7 +149,7 @@ export class Enemy {
     return null; // No path available
   }
 
-  moveTowardsPlayer(dt, blocks) {
+  moveTowardsPlayer(dt, blocks, enemies) {
     if (!this.targetPosition) return;
     
     // If not moving and aligned to grid, check for new move
@@ -155,15 +167,21 @@ export class Enemy {
           const tx = Math.round(this.x / this.size) * this.size + path.dx * this.size;
           const ty = Math.round(this.y / this.size) * this.size + path.dy * this.size;
           
-          // Double-check collision (should be safe since findAlternativePath checked)
-          const collision = blocks.some(block => 
+          // Check collision with blocks and other enemies
+          const blockCollision = blocks.some(block => 
+            (block instanceof DestructibleBlock || 
+             block instanceof IndestructibleBlock || 
+             block instanceof TreeBlock ||
+             block instanceof SteelBlock) &&
             tx < block.x + block.size &&
             tx + this.size > block.x &&
             ty < block.y + block.size &&
             ty + this.size > block.y
           );
           
-          if (!collision && tx >= 0 && ty >= 0 && tx < 30 * this.size && ty < 15 * this.size) {
+          const enemyCollision = this.checkEnemyCollision(tx, ty, enemies);
+          
+          if (!blockCollision && !enemyCollision && tx >= 0 && ty >= 0 && tx < 30 * this.size && ty < 15 * this.size) {
             this.moving = true;
             this.moveTarget = { x: tx, y: ty };
             this.moveDir = path;
