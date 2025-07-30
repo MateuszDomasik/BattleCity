@@ -26,11 +26,11 @@ export class TreeBlock {
   render(ctx) {
     this.draw(ctx);
     
-    // Draw health bar (classic style - same as DestructibleBlock)
+    // Draw health bar above the tree
     const barWidth = this.size * 0.8;
     const barHeight = 8;
     const barX = this.x + (this.size - barWidth) / 2;
-    const barY = this.y + this.size / 2 - barHeight / 2;
+    const barY = this.y - barHeight - 2; // Position above the tree with smaller gap
     const healthPercent = this.health / this.maxHealth;
     
     // Border
@@ -41,13 +41,6 @@ export class TreeBlock {
     // Fill
     ctx.fillStyle = '#00ff00';
     ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
-    
-    // HP number below health bar
-    ctx.fillStyle = 'white';
-    ctx.font = `${Math.floor(this.size/3)}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText(this.health, this.x + this.size/2, barY + barHeight + 2);
   }
 
   takeDamage(damage = 1) {

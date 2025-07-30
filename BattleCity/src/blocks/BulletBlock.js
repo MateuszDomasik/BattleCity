@@ -22,12 +22,5 @@ export class BulletBlock {
 
   render(ctx) {
     this.draw(ctx);
-    
-    // Draw "+5" text on top
-    ctx.fillStyle = 'white';
-    ctx.font = `${Math.floor(this.size/3)}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('+5', this.x + this.size/2, this.y + this.size/2);
   }
 } 

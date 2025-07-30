@@ -447,8 +447,37 @@ class MapEditor {
         this.render();
         this.updateEditorInfo();
         
+        // Re-render after images load to ensure they display properly
+        this.reRenderAfterImagesLoad();
+        
         // Show success message
         alert(`Map "${mapData.name}" loaded successfully! You can now edit it.`);
+    }
+
+    reRenderAfterImagesLoad() {
+        // Check if any blocks have images that need to load
+        const blocksWithImages = this.blocks.filter(block => block.image);
+        
+        if (blocksWithImages.length === 0) {
+            return; // No images to load
+        }
+        
+        // Create a promise for each image to load
+        const imagePromises = blocksWithImages.map(block => {
+            return new Promise((resolve) => {
+                if (block.image.complete) {
+                    resolve();
+                } else {
+                    block.image.onload = () => resolve();
+                    block.image.onerror = () => resolve(); // Continue even if image fails
+                }
+            });
+        });
+        
+        // Re-render after all images are loaded
+        Promise.all(imagePromises).then(() => {
+            this.render();
+        });
     }
 
     updateEditorInfo() {
@@ -500,6 +529,9 @@ class MapEditor {
         });
         
         this.render();
+        
+        // Re-render after images load to ensure they display properly
+        this.reRenderAfterImagesLoad();
     }
 
     clearMap() {
