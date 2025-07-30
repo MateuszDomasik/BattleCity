@@ -2,6 +2,12 @@
 
 A classic tank battle game with modern features including resource collection, tower defense, and a comprehensive menu system.
 
+<img src="assets/game1.png" width="300">
+
+<img src="assets/game2.png" width="300">
+
+<img src="assets/game3.png" width="300">
+
 ## How to Play
 
 ### Starting the Game
@@ -38,7 +44,7 @@ The main game mode featuring:
 - Real-time player vs player combat
 - Shared game worlds
 
-#### Map Editor (Coming Soon)
+#### Map Editor
 - Custom map creation
 - Block placement tools
 - Save and load custom maps
