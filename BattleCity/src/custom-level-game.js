@@ -17,6 +17,8 @@ import { Grass2Block } from './blocks/Grass2Block.js';
 import { GravelBlock } from './blocks/GravelBlock.js';
 import { GroundBlock } from './blocks/GroundBlock.js';
 import { SandBlock } from './blocks/SandBlock.js';
+import { CastleBlock } from './blocks/CastleBlock.js';
+import { PortalBlock } from './blocks/PortalBlock.js';
 
 let animationId = null;
 
@@ -90,6 +92,12 @@ function createBlocksAndTowersFromData(levelData) {
                     break;
                 case 'SandBlock':
                     block = new SandBlock(blockData.x, blockData.y);
+                    break;
+                case 'CastleBlock':
+                    block = new CastleBlock(blockData.x, blockData.y);
+                    break;
+                case 'PortalBlock':
+                    block = new PortalBlock(blockData.x, blockData.y);
                     break;
             }
             

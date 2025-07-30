@@ -13,6 +13,8 @@ import { Grass2Block } from './blocks/Grass2Block.js';
 import { GravelBlock } from './blocks/GravelBlock.js';
 import { GroundBlock } from './blocks/GroundBlock.js';
 import { SandBlock } from './blocks/SandBlock.js';
+import { CastleBlock } from './blocks/CastleBlock.js';
+import { PortalBlock } from './blocks/PortalBlock.js';
 
 class MapEditor {
     constructor() {
@@ -161,6 +163,10 @@ class MapEditor {
                 return new GroundBlock(x, y);
             case 'SandBlock':
                 return new SandBlock(x, y);
+            case 'CastleBlock':
+                return new CastleBlock(x, y);
+            case 'PortalBlock':
+                return new PortalBlock(x, y);
             default:
                 return null;
         }

@@ -159,6 +159,13 @@ body {
     background-color: #8B4513;
 }
 
+.block-preview.castle {
+    background-color: #8B4513;
+    background-image: url('../assets/castle.png');
+    background-size: cover;
+    background-position: center;
+}
+
 .block-preview.flowers {
     background-color: #FF69B4;
     background-image: url('../assets/flowers.png');

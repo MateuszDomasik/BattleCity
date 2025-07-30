@@ -10,6 +10,8 @@ import { GrayBlock } from './blocks/GrayBlock.js';
 import { StoneBlock } from './blocks/StoneBlock.js';
 import { StoneCollectibleBlock } from './blocks/StoneCollectibleBlock.js';
 import { ShootingTower } from './blocks/ShootingTower.js';
+import { CastleBlock } from './blocks/CastleBlock.js';
+import { PortalBlock } from './blocks/PortalBlock.js';
 import { FlowersBlock } from './blocks/FlowersBlock.js';
 import { Grass1Block } from './blocks/Grass1Block.js';
 import { Grass2Block } from './blocks/Grass2Block.js';
@@ -25,7 +27,7 @@ export function renderGame(state) {
 
   // Draw blocks
   for (const block of state.blocks) {
-    if (block instanceof DestructibleBlock || block instanceof BulletBlock || block instanceof IndestructibleBlock || block instanceof WaterBlock || block instanceof TreeBlock || block instanceof WoodBlock || block instanceof LightBrownBlock || block instanceof SteelBlock || block instanceof GrayBlock || block instanceof StoneBlock || block instanceof StoneCollectibleBlock || block instanceof FlowersBlock || block instanceof Grass1Block || block instanceof Grass2Block || block instanceof GravelBlock || block instanceof GroundBlock || block instanceof SandBlock) {
+    if (block instanceof DestructibleBlock || block instanceof BulletBlock || block instanceof IndestructibleBlock || block instanceof WaterBlock || block instanceof TreeBlock || block instanceof WoodBlock || block instanceof LightBrownBlock || block instanceof SteelBlock || block instanceof GrayBlock || block instanceof StoneBlock || block instanceof StoneCollectibleBlock || block instanceof CastleBlock || block instanceof PortalBlock || block instanceof FlowersBlock || block instanceof Grass1Block || block instanceof Grass2Block || block instanceof GravelBlock || block instanceof GroundBlock || block instanceof SandBlock) {
       block.render(ctx);
     } else {
       ctx.fillStyle = block.color || 'gray';

@@ -10,7 +10,10 @@ import { GrayBlock } from './blocks/GrayBlock.js';
 import { StoneBlock } from './blocks/StoneBlock.js';
 import { StoneCollectibleBlock } from './blocks/StoneCollectibleBlock.js';
 import { ShootingTower } from './blocks/ShootingTower.js';
+import { CastleBlock } from './blocks/CastleBlock.js';
+import { PortalBlock } from './blocks/PortalBlock.js';
 import { Enemy } from './enemy.js';
+import { showVictoryPopup } from './victory.js';
 
 export const GRID_COLS = 30;
 export const GRID_ROWS = 15;
@@ -299,6 +302,26 @@ export function updateState(state) {
         }
       }
       
+      // Check collision with CastleBlock
+      if (block instanceof CastleBlock) {
+        if (
+          bullet.x < block.x + block.size &&
+          bullet.x + bullet.size > block.x &&
+          bullet.y < block.y + block.size &&
+          bullet.y + bullet.size > block.y
+        ) {
+          const destroyed = block.takeDamage(1);
+          if (destroyed) {
+            // Replace castle with portal block
+            state.blocks.splice(j, 1);
+            state.blocks.push(new PortalBlock(block.x + block.size/4, block.y + block.size/4));
+          }
+          state.bullets.splice(i, 1);
+          bulletHit = true;
+          break;
+        }
+      }
+      
       // Check collision with SteelBlock
       if (block instanceof SteelBlock) {
         if (
@@ -500,6 +523,26 @@ export function updateState(state) {
           }
         }
         
+        // Check collision with CastleBlock
+        if (block instanceof CastleBlock) {
+          if (
+            bullet.x < block.x + block.size &&
+            bullet.x + bullet.size > block.x &&
+            bullet.y < block.y + block.size &&
+            bullet.y + bullet.size > block.y
+          ) {
+            const destroyed = block.takeDamage ? block.takeDamage() : false;
+            if (destroyed) {
+              // Replace castle with portal block
+              state.blocks.splice(j, 1);
+              state.blocks.push(new PortalBlock(block.x + block.size/4, block.y + block.size/4));
+            }
+            enemy.bullets.splice(i, 1);
+            bulletHit = true;
+            break;
+          }
+        }
+        
         // Check collision with IndestructibleBlock
         if (block instanceof IndestructibleBlock) {
           if (
@@ -605,6 +648,23 @@ export function updateState(state) {
       ) {
         p.stones += 1; // Add stone resource
         state.blocks.splice(i, 1);
+      }
+    }
+  }
+
+  // After StoneCollectibleBlock collision, add PortalBlock collision
+  for (let i = state.blocks.length - 1; i >= 0; i--) {
+    const block = state.blocks[i];
+    if (block instanceof PortalBlock) {
+      if (
+        p.x < block.x + block.size &&
+        p.x + p.size > block.x &&
+        p.y < block.y + block.size &&
+        p.y + p.size > block.y
+      ) {
+        // Victory! Show victory popup
+        showVictoryPopup();
+        state.blocks.splice(i, 1); // Remove portal after triggering victory
       }
     }
   }
